@@ -4,15 +4,16 @@ import type { Service } from '../../data/services'
 
 interface BookingSuccessProps {
   service: Service
+  /** The real, database-backed booking's reference (e.g. "UC10001") — see
+   *  BookingPage.tsx's handleConfirm, which only reaches this step after
+   *  bookingApi.createBooking() actually succeeds. */
+  bookingRef: string
 }
 
-/**
- * Frontend-only confirmation state — reached after BookingReview's Confirm
- * Booking. No backend/database booking is created (no booking API exists
- * yet, per the brief); the note at the bottom says so explicitly rather
- * than implying a real booking now exists somewhere.
- */
-export function BookingSuccess({ service }: BookingSuccessProps) {
+/** Reached only after BookingReview's Confirm Booking has successfully
+ *  created a real booking (BookingPage.tsx awaits bookingApi.createBooking()
+ *  first) — never shown for a booking that doesn't actually exist. */
+export function BookingSuccess({ service, bookingRef }: BookingSuccessProps) {
   return (
     <div className="booking-success">
       <span className="booking-success__icon" aria-hidden="true">
@@ -23,17 +24,16 @@ export function BookingSuccess({ service }: BookingSuccessProps) {
       <p className="booking-success__message">Your service request has been recorded.</p>
 
       <div className="booking-success__service">
+        <span className="booking-success__service-label">Booking ID</span>
+        <span className="booking-success__service-name">{bookingRef}</span>
+      </div>
+      <div className="booking-success__service">
         <span className="booking-success__service-label">Service</span>
         <span className="booking-success__service-name">{service.name}</span>
       </div>
 
       <p className="booking-success__followup">
         Our team will review your request and contact you regarding the service.
-      </p>
-
-      <p className="booking-success__demo-note">
-        This is a frontend demo confirmation — no live booking system is connected yet, so nothing has been saved to
-        a real account or database.
       </p>
 
       <div className="booking-success__actions">

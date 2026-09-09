@@ -1,0 +1,23 @@
+.tech-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.tech-section-header__title {
+  font-size: var(--text-title-size);
+  font-weight: 700;
+  color: var(--color-ink);
+  margin: 0;
+}
+.tech-section-header__link {
+  flex-shrink: 0;
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+  white-space: nowrap;
+}
+.tech-section-header__link:hover {
+  color: var(--color-primary);
+}

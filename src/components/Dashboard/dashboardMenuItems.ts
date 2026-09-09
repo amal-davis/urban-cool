@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from 'react'
-import { HeadsetIcon, InfoIcon, MapPinIcon, CalendarIcon, SettingsIcon, ShieldCheckIcon, WalletIcon } from '../icons/Icons'
+import { HeadsetIcon, InfoIcon, MapPinIcon, CalendarIcon, SettingsIcon, ShieldCheckIcon } from '../icons/Icons'
 
 /** The dashboard's own routing-within-a-page vocabulary — see
  *  UserDashboard.tsx for how `activeSection` drives both the desktop
@@ -11,7 +11,6 @@ import { HeadsetIcon, InfoIcon, MapPinIcon, CalendarIcon, SettingsIcon, ShieldCh
 export type DashboardSectionId =
   | 'profile'
   | 'address'
-  | 'payment'
   | 'bookings'
   | 'support'
   | 'about'
@@ -27,7 +26,6 @@ export interface DashboardMenuItemConfig {
 // Order matches the supplied mobile reference exactly.
 export const dashboardMenuItems: DashboardMenuItemConfig[] = [
   { id: 'address', label: 'My Address', Icon: MapPinIcon },
-  { id: 'payment', label: 'Payment Method', Icon: WalletIcon },
   { id: 'bookings', label: 'My Bookings', Icon: CalendarIcon },
   { id: 'support', label: 'Help & Support', Icon: HeadsetIcon },
   { id: 'about', label: 'About Us', Icon: InfoIcon },

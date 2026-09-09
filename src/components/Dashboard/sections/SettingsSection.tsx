@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../lib/AuthContext'
 import { LogoutIcon } from '../../icons/Icons'
 import type { NotificationPreferences } from '../../../data/dashboardData'
 import './SettingsSection.css'
@@ -36,6 +37,18 @@ const notificationRows: { key: keyof NotificationPreferences; label: string; des
  */
 export function SettingsSection({ preferences, onToggle }: SettingsSectionProps) {
   const navigate = useNavigate()
+  const { logout } = useAuth()
+
+  async function handleLogout() {
+    // Best-effort: AuthContext.logout() already clears local auth state even
+    // if the backend call itself fails (e.g. an already-expired session), so
+    // this always still navigates the user out of the protected page.
+    try {
+      await logout()
+    } finally {
+      navigate('/')
+    }
+  }
 
   return (
     <>
@@ -65,10 +78,7 @@ export function SettingsSection({ preferences, onToggle }: SettingsSectionProps)
 
       <div className="section-card">
         <h3 className="section-heading">Account</h3>
-        {/* Frontend-only placeholder — no auth/session API to call yet (see
-            accounts/views.py); this just returns to the homepage, matching
-            what a real sign-out would visually do once one exists. */}
-        <button type="button" className="btn btn--ghost settings-logout" onClick={() => navigate('/')}>
+        <button type="button" className="btn btn--ghost settings-logout" onClick={handleLogout}>
           <LogoutIcon /> Log Out
         </button>
       </div>

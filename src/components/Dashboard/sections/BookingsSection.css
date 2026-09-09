@@ -85,3 +85,13 @@
   color: var(--color-ink);
   text-align: right;
 }
+
+.booking-detail__note {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin: 0;
+  width: 100%;
+}

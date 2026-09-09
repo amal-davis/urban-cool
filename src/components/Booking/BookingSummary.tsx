@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import type { Service } from '../../data/services'
 import { ServiceImage } from '../ServiceDetailPage/ServiceImage'
 import { IncludedServices } from '../ServiceDetailPage/IncludedServices'
@@ -30,11 +29,11 @@ export function BookingSummary({ service }: BookingSummaryProps) {
         <p className="booking-summary__description">{service.shortDescription}</p>
 
         <IncludedServices items={service.includedServices} />
-        <EstimatedPrice startingPrice={service.startingPrice} priceLabel={service.priceLabel} />
-
-        <Link to={`/service/${service.id}`} className="btn btn--ghost booking-summary__edit">
-          Edit Service
-        </Link>
+        <EstimatedPrice
+          startingPrice={service.startingPrice}
+          endingPrice={service.estimatedPriceTo}
+          priceLabel={service.priceLabel}
+        />
       </div>
     </aside>
   )

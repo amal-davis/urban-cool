@@ -6,6 +6,8 @@ import {
   signupSendOtp,
   verifySignupOtp,
 } from '../../lib/authApi'
+import { useAuth } from '../../lib/AuthContext'
+import { toE164 } from '../../lib/indianPhone'
 import { MobileNumberStep } from './MobileNumberStep'
 import { OtpStep } from './OtpStep'
 import { ProfileStep } from './ProfileStep'
@@ -42,6 +44,7 @@ function messageFor(error: unknown, fallback: string): string {
  */
 export function SignupCard() {
   const navigate = useNavigate()
+  const auth = useAuth()
 
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
@@ -181,11 +184,21 @@ export function SignupCard() {
     setEmailApiError(null)
     setCreatingAccount(true)
     try {
-      await createAccount(verificationToken, name, emailValue)
+      const created = await createAccount(verificationToken, name, emailValue)
       // Session cookie is already set by the backend at this point (see
       // authApi.ts/accounts/views.py's login() call) — signup ends
       // automatically signed in, same mechanism LoginCard relies on.
-      navigate('/', { replace: true })
+      // createAccount's own response already has name/email/phone, so this
+      // seeds AuthContext directly instead of an extra profile fetch.
+      auth.setCustomer({
+        name: created.fullName,
+        email: created.email,
+        mobileNumber: toE164(created.phone),
+        // Signup's own response has no date_joined — filled in by the next
+        // real profile fetch (e.g. opening the dashboard's Edit Profile).
+        memberSince: null,
+      })
+      navigate('/dashboard', { replace: true })
     } catch (error) {
       if (error instanceof AuthApiError && error.code === 'email_exists') {
         setEmailApiError(error.message)

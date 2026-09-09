@@ -1,9 +1,12 @@
-/* Service Tracking page (/track/:bookingId). Desktop is a genuine
-   two-column dashboard (~38/62 — see .tracking-page__grid); mobile stacks
-   to one column in the exact order .tracking-page__left's children (booking
-   summary, timeline, technician) then .tracking-page__right's (map) already
-   appear in the DOM — no order-swapping trick needed here, unlike
-   ServiceDetailPage/BookingPage. No fixed viewport height anywhere. */
+/* Service Tracking page (/track/:bookingId). The booking summary and the
+   Service Status timeline both live in .tracking-page__top, ABOVE the
+   two-column grid — a 7-step timeline needs real horizontal room on
+   desktop, which the ~38%-wide left grid column can't give it, so it isn't
+   confined there. .tracking-page__grid below is a genuine two-column
+   dashboard (~38/62) on desktop (technician left, map right); on mobile
+   both .tracking-page__top and the grid stack to one column in DOM order —
+   no order-swapping trick needed here, unlike ServiceDetailPage/BookingPage.
+   No fixed viewport height anywhere. */
 
 .tracking-page {
   background: var(--color-bg);
@@ -78,6 +81,31 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr);
     gap: var(--space-2xl);
     align-items: start;
+  }
+}
+
+/* ---- Full-width top block (summary + status timeline) ---- */
+
+.tracking-page__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+@media (min-width: 901px) {
+  .tracking-page__top {
+    margin-bottom: var(--space-2xl);
+  }
+}
+
+/* Slightly roomier than the generic .tracking-section shell below — this
+   is the page's main focal card, so it earns a bit more breathing room on
+   desktop, without changing the shared shell every other section
+   (Technician/Booking Information/etc.) also uses. */
+@media (min-width: 901px) {
+  .tracking-page__status-card {
+    padding: var(--space-xl);
   }
 }
 
@@ -163,63 +191,88 @@
   height: 16px;
 }
 
-/* ---- Status timeline ---- */
+/* ---- Status timeline ----
+   Mobile-first: a vertical stacked list (icon rail on the left, label +
+   — on the active step only — the current-status message to its right).
+   Desktop (>=901px, this page's own existing structural breakpoint —
+   see .tracking-page__grid above) switches to a horizontal row of equal-
+   width columns (icon centered above its label). Same markup drives both;
+   only the CSS below changes orientation.
+
+   The connector between two steps is one small element per step (never a
+   single absolutely-positioned bar computed from the step count or fixed
+   pixel offsets): it lives inside that step's own "rail" alongside its
+   dot, sized with plain relative CSS so it always reaches exactly to the
+   middle of the next step regardless of how many steps exist or how tall
+   a step's own content grows (e.g. the active step's inline message). */
 
 .status-timeline {
-  position: relative;
-  padding-top: var(--space-xs);
-}
-
-.status-timeline__track {
-  position: absolute;
-  top: 22px;
-  height: 3px;
-  background: var(--color-border);
-  border-radius: var(--radius-full);
-}
-.status-timeline__track-fill {
-  height: 100%;
-  background: var(--color-primary-deep);
-  border-radius: var(--radius-full);
-  transition: width 240ms ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .status-timeline__track-fill {
-    transition: none;
-  }
-}
-
-.status-timeline__steps {
-  position: relative;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .status-timeline__step {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-xs);
-  text-align: center;
+  flex-direction: row;
+  /* stretch, not flex-start: the rail must match this row's own actual
+     content height (the active step's inline message, or a label that
+     wraps) so its connector — anchored to the rail's own box — still
+     reaches exactly to the next step's dot. See .status-timeline__rail's
+     own comment. */
+  align-items: stretch;
+  gap: var(--space-md);
+  padding-bottom: var(--space-xl);
+}
+.status-timeline__step:last-child {
+  padding-bottom: 0;
+}
+
+.status-timeline__rail {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-shrink: 0;
+  /* Fixed width — a deliberately constant icon-column width so every
+     row's label starts at the same x-position (the brief's own mobile
+     alignment requirement). Height is intentionally NOT fixed here: the
+     parent's align-items:stretch above lets this box grow to match
+     whatever height this row's content actually needs, which the
+     connector below depends on to reach the next dot correctly. */
+  width: 40px;
+}
+@media (min-width: 901px) {
+  .status-timeline__rail {
+    /* Desktop: the opposite constraint. Rail spans the FULL column width
+       (not just the dot's own size) purely so the connector's
+       width:100% below reaches the next column's dot center; height
+       stays fixed to the dot's own size since desktop stacks dot above
+       label in the same column rather than needing to stretch to match
+       a taller sibling. */
+    width: 100%;
+    height: 44px;
+  }
 }
 
 .status-timeline__dot {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   background: var(--color-bg);
   border: 3px solid var(--color-border);
   color: var(--color-muted);
 }
 .status-timeline__dot svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .status-timeline__step--completed .status-timeline__dot {
@@ -231,22 +284,151 @@
   background: var(--color-bg);
   border-color: var(--color-primary-deep);
   color: var(--color-primary-deep);
+  /* A soft halo, not just a border color swap — makes "this is the
+     current step" register at a glance, distinct from a completed dot's
+     solid fill. Same primary token, no new color. */
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--color-primary) 18%, transparent);
+}
+
+/* The connecting line to the NEXT step — background is the neutral
+   "upcoming" color by default; the --completed modifier (applied when
+   this step itself is already completed) swaps it to the primary color,
+   so the line's own fill state always matches the dot it's leaving. */
+.status-timeline__connector {
+  position: absolute;
+  background: var(--color-border);
+  z-index: 0;
+}
+.status-timeline__connector--completed {
+  background: var(--color-primary-deep);
+}
+
+.status-timeline__content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 8px; /* optical centering against the 40px dot */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.status-timeline__label {
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-muted);
 }
 .status-timeline__step--active .status-timeline__label {
   color: var(--color-primary-deep);
   font-weight: 700;
 }
+.status-timeline__step--completed .status-timeline__label {
+  color: var(--color-ink);
+}
 
-.status-timeline__label {
-  font-size: var(--text-label-size);
-  font-weight: 600;
-  color: var(--color-muted);
+.status-timeline__inline-message {
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
 }
 
 .status-timeline__message {
   font-size: var(--text-body-size);
   color: var(--color-ink);
   margin: 0;
+}
+
+/* Mobile (default): connector runs straight down from this dot's bottom
+   edge, through this step's own bottom padding, to the next dot's top.
+   `top: 40px` is fixed to the dot's own diameter (not 100%/a percentage)
+   specifically so it still starts at the dot's true bottom edge even
+   though the rail itself has stretched taller to match this row's
+   content (see .status-timeline__rail/.status-timeline__step's own
+   comments) — a percentage here would instead track the stretched box
+   and drift down the taller a row's content gets. `bottom` reaches
+   through this step's own padding-bottom to the next dot's top, which
+   likewise never needs to know that row's actual height. */
+.status-timeline__step:not(:last-child) .status-timeline__connector {
+  top: 40px;
+  bottom: calc(-1 * var(--space-xl));
+  left: 50%;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+}
+
+/* Desktop: horizontal columns, icon centered above its label. The
+   connector runs from this dot's center to the right; width:100% of its
+   own rail box reaches exactly the next column's dot center, because
+   every column is an equal fraction of the row (see .status-timeline
+   below) — no per-step-count math needed. */
+@media (min-width: 901px) {
+  .status-timeline {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .status-timeline__step {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-bottom: 0;
+    text-align: center;
+  }
+  .status-timeline__content {
+    padding-top: 0;
+    align-items: center;
+  }
+  .status-timeline__label {
+    font-size: var(--text-label-size);
+    max-width: 12ch;
+    margin-inline: auto;
+    line-height: 1.3;
+  }
+  /* The active step's message stays where CurrentStatusMessage already
+     renders it below the whole timeline on desktop — see
+     ServiceTrackingPage.tsx/.tracking-page__status-card's own rule
+     further down, which hides that instead on mobile. */
+  .status-timeline__inline-message {
+    display: none;
+  }
+  .status-timeline__dot {
+    width: 44px;
+    height: 44px;
+  }
+  .status-timeline__dot svg {
+    width: 20px;
+    height: 20px;
+  }
+  .status-timeline__step:not(:last-child) .status-timeline__connector {
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    width: 100%;
+    height: 3px;
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-timeline__connector {
+    transition: background-color 240ms ease;
+  }
+}
+
+/* CurrentStatusMessage.tsx's standalone paragraph, rendered once below the
+   whole timeline — desktop's own single "current status" line. On mobile
+   it's redundant with .status-timeline__inline-message above (shown right
+   next to the active step instead), so it's hidden there rather than
+   duplicated. */
+@media (max-width: 900px) {
+  .tracking-page__status-card > .status-timeline__message {
+    display: none;
+  }
+}
+
+.tracking-map__fallback-heading {
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 /* ---- Technician ---- */
@@ -518,16 +700,6 @@
   .tracking-section,
   .booking-summary-card {
     padding: var(--space-md);
-  }
-  .status-timeline__dot {
-    width: 36px;
-    height: 36px;
-  }
-  .status-timeline__track {
-    top: 18px;
-  }
-  .status-timeline__label {
-    font-size: 0.6875rem;
   }
   .booking-summary-card {
     flex-direction: column;

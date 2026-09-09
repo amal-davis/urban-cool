@@ -1,16 +1,19 @@
 import { TechnicianIcon } from '../icons/Icons'
 import { TechnicianCard } from './TechnicianCard'
-import type { TrackingTechnician } from '../../data/tracking'
 
 interface TechnicianSectionProps {
-  technician: TrackingTechnician | null
+  /** Both null until an admin assigns a technician (see
+   *  backend/bookings/serializers.py's BookingTrackingSerializer) — never
+   *  one set without the other. */
+  technicianName: string | null
+  technicianPhone: string | null
 }
 
 /** Heading + TechnicianCard once a technician exists; a clearly-pending
- *  state instead of a fabricated technician when `technician` is null
- *  (BOOKED status — nobody's been assigned yet, see data/tracking.ts). */
-export function TechnicianSection({ technician }: TechnicianSectionProps) {
-  if (!technician) {
+ *  state instead of a fabricated technician when nobody's been assigned
+ *  yet. */
+export function TechnicianSection({ technicianName, technicianPhone }: TechnicianSectionProps) {
+  if (!technicianName || !technicianPhone) {
     return (
       <div className="tracking-section">
         <h2 className="tracking-section__heading">Technician Assignment</h2>
@@ -27,7 +30,7 @@ export function TechnicianSection({ technician }: TechnicianSectionProps) {
   return (
     <div className="tracking-section">
       <h2 className="tracking-section__heading">Technician Assigned</h2>
-      <TechnicianCard technician={technician} />
+      <TechnicianCard name={technicianName} phone={technicianPhone} />
     </div>
   )
 }

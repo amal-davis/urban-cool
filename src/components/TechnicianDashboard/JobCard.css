@@ -1,0 +1,87 @@
+/* Same visual language as the customer dashboard's BookingCard.css — flat
+   card, 1px border, --color-surface meta box — not re-derived from scratch. */
+.tech-job-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.tech-job-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.tech-job-card__heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tech-job-card__service {
+  font-size: var(--text-title-size);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.tech-job-card__ref {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.tech-job-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+.tech-job-card__meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+}
+.tech-job-card__meta-item svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--color-muted);
+  margin-top: 1px;
+}
+
+.tech-job-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.tech-job-card__amount {
+  font-size: var(--text-title-size);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* Utility list wrapper — used by every page that renders a stack of these. */
+.tech-job-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@media (max-width: 480px) {
+  .tech-job-card {
+    padding: var(--space-md);
+  }
+  .tech-job-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tech-job-card__footer .btn {
+    width: 100%;
+  }
+}

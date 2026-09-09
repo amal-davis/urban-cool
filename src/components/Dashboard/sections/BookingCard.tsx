@@ -2,24 +2,18 @@ import { Link } from 'react-router-dom'
 import { CalendarIcon, ClockIcon, MapPinIcon } from '../../icons/Icons'
 import { StatusBadge } from '../StatusBadge'
 import { services } from '../../../data/services'
-import { getTrackingDetails } from '../../../data/tracking'
-import type { Booking } from '../../../data/dashboardData'
+import { formatBookingAddress, formatBookingDate, formatEstimatedCost } from '../../../lib/bookingApi'
+import type { BookingListItem } from '../../../lib/bookingApi'
 import './BookingCard.css'
 
 interface BookingCardProps {
-  booking: Booking
-  onViewDetails: (booking: Booking) => void
+  booking: BookingListItem
+  onViewDetails: (booking: BookingListItem) => void
 }
 
 export function BookingCard({ booking, onViewDetails }: BookingCardProps) {
-  const service = services.find((item) => item.id === booking.serviceId)
+  const service = services.find((item) => item.id === booking.serviceSlug)
   const ServiceIcon = service?.Icon
-  // Only bookings the Service Tracking page actually has mock tracking data
-  // for get a Track Service link (today: every non-cancelled booking — see
-  // data/tracking.ts). Checking the real lookup, rather than assuming
-  // `status !== 'cancelled'` always lines up with it, keeps this correct if
-  // that mock dataset changes independently later.
-  const isTrackable = getTrackingDetails(booking.id) !== undefined
 
   return (
     <div className="booking-card">
@@ -36,27 +30,25 @@ export function BookingCard({ booking, onViewDetails }: BookingCardProps) {
 
       <div className="booking-card__meta">
         <span className="booking-card__meta-item">
-          <CalendarIcon /> {booking.date}
+          <CalendarIcon /> {formatBookingDate(booking.bookingDate)}
         </span>
         <span className="booking-card__meta-item">
-          <ClockIcon /> {booking.timeSlot}
+          <ClockIcon /> {booking.timeSlotLabel}
         </span>
         <span className="booking-card__meta-item booking-card__meta-item--address">
-          <MapPinIcon /> {booking.address}
+          <MapPinIcon /> {formatBookingAddress(booking)}
         </span>
       </div>
 
       <div className="booking-card__footer">
-        <span className="booking-card__price">₹{booking.price.toLocaleString('en-IN')}</span>
+        <span className="booking-card__price">{formatEstimatedCost(booking.estimatedMinPrice, booking.estimatedMaxPrice)}</span>
         <div className="booking-card__actions">
           <button type="button" className="btn btn--ghost" onClick={() => onViewDetails(booking)}>
             View Details
           </button>
-          {isTrackable && (
-            <Link to={`/track/${booking.id}`} className="btn btn--primary">
-              Track Service
-            </Link>
-          )}
+          <Link to={`/track/${booking.id}`} className="btn btn--primary">
+            View Tracking
+          </Link>
         </div>
       </div>
     </div>

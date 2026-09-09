@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthApiError, sendOtp, verifyOtp } from '../../lib/authApi'
+import { useAuth } from '../../lib/AuthContext'
 import { MobileNumberStep } from './MobileNumberStep'
 import { OtpStep } from './OtpStep'
 import './LoginCard.css'
@@ -25,6 +26,8 @@ function messageFor(error: unknown, fallback: string): string {
  */
 export function LoginCard() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const auth = useAuth()
 
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
@@ -36,6 +39,7 @@ export function LoginCard() {
   const [resending, setResending] = useState(false)
 
   const [sendError, setSendError] = useState<string | null>(null)
+  const [sendErrorAction, setSendErrorAction] = useState<{ label: string; to: string } | undefined>(undefined)
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
   const [resendSeconds, setResendSeconds] = useState(0)
@@ -70,6 +74,7 @@ export function LoginCard() {
 
   async function handleSendOtp(localNumber: string) {
     setSendError(null)
+    setSendErrorAction(undefined)
     setSendingOtp(true)
     try {
       const result = await sendOtp(localNumber)
@@ -80,6 +85,12 @@ export function LoginCard() {
       setStep('otp')
       startResendTimer(result.resendAfter)
     } catch (error) {
+      // Mirrors SignupCard's account_exists -> "Log In" link, in reverse:
+      // a number with no completed Signup (backend/accounts/views.py's
+      // send_otp) gets pointed at Signup instead of a dead-end error.
+      if (error instanceof AuthApiError && error.code === 'not_registered') {
+        setSendErrorAction({ label: 'Sign Up', to: '/signup' })
+      }
       setSendError(messageFor(error, 'Could not send OTP. Please try again.'))
     } finally {
       setSendingOtp(false)
@@ -114,8 +125,16 @@ export function LoginCard() {
     try {
       await verifyOtp(phone, code)
       // Session cookie is already set by the backend at this point (see
-      // authApi.ts) — nothing left to store client-side before redirecting.
-      navigate('/', { replace: true })
+      // authApi.ts). verifyOtp's own response has no name/email though —
+      // just the phone — so this refetches the full profile once via
+      // AuthContext rather than navigating to a dashboard that would
+      // otherwise render with a still-null customer for a moment.
+      await auth.refresh()
+      // ProtectedRoute (e.g. a booking page reached while signed out) sets
+      // this when it redirects here — falls back to the dashboard for a
+      // plain, unprompted visit to /login.
+      const from = (location.state as { from?: string } | null)?.from
+      navigate(from ?? '/dashboard', { replace: true })
     } catch (error) {
       setVerifyError(messageFor(error, 'Something went wrong. Please try again.'))
     } finally {
@@ -139,7 +158,16 @@ export function LoginCard() {
             initialValue={phone}
             loading={sendingOtp}
             apiError={sendError}
+            apiErrorAction={sendErrorAction}
             onSubmit={handleSendOtp}
+            footer={
+              <p className="auth-resend">
+                Don&rsquo;t have an account?{' '}
+                <Link to="/signup" className="auth-resend__link">
+                  Sign Up
+                </Link>
+              </p>
+            }
           />
         </div>
       ) : (

@@ -9,6 +9,8 @@ export interface BookingFormErrors {
   city?: string
   state?: string
   pincode?: string
+  bookingDate?: string
+  bookingTime?: string
   complaint?: string
 }
 
@@ -49,6 +51,16 @@ export function validateBookingForm(values: BookingFormValues): BookingFormError
   }
   if (!isValidPincode(values.address.pincode)) {
     errors.pincode = 'Please enter a valid 6-digit PIN code.'
+  }
+
+  if (!values.bookingDate) {
+    errors.bookingDate = 'Please select a preferred service date.'
+  } else if (values.bookingDate < new Date().toISOString().slice(0, 10)) {
+    errors.bookingDate = 'Please choose a date that is today or later.'
+  }
+
+  if (!values.bookingTime) {
+    errors.bookingTime = 'Please select a preferred time slot.'
   }
 
   if (!values.complaint.trim()) {

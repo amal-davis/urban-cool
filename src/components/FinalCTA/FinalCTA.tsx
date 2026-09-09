@@ -9,11 +9,14 @@ export function FinalCTA() {
         <p className="final-cta__description">Book your appliance service with Urban Cool today.</p>
 
         <div className="final-cta__actions">
-          {/* TODO: wire to the real booking flow once it exists — same
-              "Coming soon" pattern used across the site. */}
-          <button type="button" className="btn btn--accent" title="Coming soon">
+          {/* No single service to book from this generic, page-bottom CTA
+              (unlike HeroCarousel's own per-slide "Book Now", which already
+              knows which service it's for) — Services is where a customer
+              actually picks one, same destination ServiceNotFound.tsx's own
+              "Browse Services" link uses. */}
+          <Link to="/services" className="btn btn--accent">
             Book a Service
-          </button>
+          </Link>
           <Link to="/contact" className="btn btn--ghost final-cta__secondary">
             Contact Us
           </Link>

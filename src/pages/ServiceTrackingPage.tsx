@@ -1,8 +1,4 @@
-import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { mockBookings } from '../data/dashboardData'
-import { services } from '../data/services'
-import { getTrackingDetails } from '../data/tracking'
 import { ChevronLeftIcon, ChatIcon } from '../components/icons/Icons'
 import { BookingNotFound } from '../components/Tracking/BookingNotFound'
 import { BookingSummaryCard } from '../components/Tracking/BookingSummaryCard'
@@ -11,50 +7,63 @@ import { StatusTimeline } from '../components/Tracking/StatusTimeline'
 import { CurrentStatusMessage } from '../components/Tracking/CurrentStatusMessage'
 import { TechnicianSection } from '../components/Tracking/TechnicianSection'
 import { TrackingMap } from '../components/Tracking/TrackingMap'
-import { ChatModal } from '../components/Tracking/ChatModal'
 import { CompletedSummary } from '../components/Tracking/CompletedSummary'
+import { useBookingTracking } from '../lib/useBookingTracking'
 import { usePageMeta } from '../lib/usePageMeta'
 import '../components/ServiceDetailPage/ServiceDetailPage.css'
 import '../components/Tracking/TrackingPage.css'
 
-const LOCATION_SECTION_COPY: Record<string, { heading: string; subtext?: string }> = {
-  BOOKED: { heading: 'Service Location' },
-  ASSIGNED: { heading: 'Technician Location' },
-  ON_THE_WAY: { heading: 'Live Location', subtext: 'Your technician is on the way' },
+const LOCATION_SECTION_COPY: Partial<Record<string, { heading: string; subtext?: string }>> = {
+  pending: { heading: 'Service Location' },
+  confirmed: { heading: 'Service Location' },
+  assigned: { heading: 'Technician Location' },
+  technician_on_the_way: { heading: 'Live Location', subtext: 'Your technician is on the way' },
+  arrived: { heading: 'Technician Location', subtext: 'Your technician has arrived at your location' },
+  in_progress: { heading: 'Technician Location', subtext: 'Your service is currently in progress' },
 }
 
 /**
- * Reusable Service Tracking page — one route (/track/:bookingId), one
- * component, driven by whichever booking matches the param. Follows the
- * exact same pattern as ServiceDetailPage/BookingPage: look up static mock
- * data by id, render a Not Found state if nothing matches, otherwise
- * render every section from that one record.
+ * Reusable Service Tracking page — one route (/track/:bookingId), driven by
+ * the real booking whichever id matches (see lib/useBookingTracking.ts's
+ * polling hook, wired to backend/bookings/views.py's booking_tracking).
+ * ProtectedRoute (App.tsx) already guarantees a signed-in customer by the
+ * time this renders; the hook's own 401/403 handling covers a session that
+ * expires mid-visit.
  *
- * On "loading" states: BookingSummaryCard/TechnicianSection/TrackingMap
- * all render synchronously from local mock data — there's no real network
- * request happening yet, so this deliberately does NOT show a fake
- * "Loading booking…" spinner for something that isn't actually async (this
- * project's own App.tsx explicitly rejects fabricated loading delays for
- * the same reason — see its lazy-loading comment). The one place a real
- * loading state exists today is Google Maps' script load, which
- * TrackingMap already handles. Swapping the lookups below for real
- * `fetch`/`useQuery` calls later is exactly where a genuine
- * "Loading booking…" state would then belong.
+ * Distinct render paths, in order: loading (first fetch only — a stale
+ * poll failure after that never blanks the page, see the hook's own
+ * refreshError), not-found/unauthorized (BookingNotFound — covers both a
+ * bad id and another customer's booking id identically, since the backend
+ * 404s either way rather than ever confirming which), cancelled (a plain
+ * panel — never the active timeline/technician content, since "on the way"
+ * etc. would be actively misleading for a cancelled job), and the normal
+ * in-progress/completed view.
  */
 export function ServiceTrackingPage() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const navigate = useNavigate()
-  const [chatOpen, setChatOpen] = useState(false)
+  const numericId = Number(bookingId)
 
   usePageMeta(
     'Track Your Service | Urban Cool',
     'Track your Urban Cool service booking, technician, and live location.',
   )
 
-  const booking = mockBookings.find((item) => item.id === bookingId)
-  const tracking = bookingId ? getTrackingDetails(bookingId) : undefined
+  const { tracking, loading, error, refreshError } = useBookingTracking(numericId)
 
-  if (!booking || !tracking) {
+  if (loading) {
+    return (
+      <section className="service-detail service-detail--not-found">
+        <div className="container">
+          <p role="status" style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--color-muted)' }}>
+            Loading booking…
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  if (error || !tracking) {
     return (
       <section className="service-detail service-detail--not-found">
         <div className="container">
@@ -64,11 +73,38 @@ export function ServiceTrackingPage() {
     )
   }
 
-  const service = services.find((item) => item.id === booking.serviceId)
-  const { status, technician, customerLocation, technicianLocation } = tracking
+  if (tracking.status === 'cancelled') {
+    return (
+      <article className="tracking-page">
+        <div className="container">
+          <header className="tracking-page__header">
+            <button
+              type="button"
+              className="service-detail__back tracking-page__back"
+              onClick={() => navigate('/dashboard')}
+              aria-label="Back to My Bookings"
+            >
+              <ChevronLeftIcon />
+            </button>
+            <h1 className="tracking-page__heading">Track Your Service</h1>
+          </header>
 
-  const showMap = status !== 'COMPLETED'
-  const showChat = technician !== null && status !== 'COMPLETED'
+          <BookingSummaryCard tracking={tracking} />
+
+          <div className="tracking-section">
+            <h2 className="tracking-section__heading">Booking Cancelled</h2>
+            <p className="status-timeline__message">This booking has been cancelled.</p>
+          </div>
+
+          <BookingDetailsCard tracking={tracking} />
+        </div>
+      </article>
+    )
+  }
+
+  const status = tracking.status
+  const showMap = status !== 'completed'
+  const showChat = tracking.technicianName !== null && status !== 'completed'
   const locationCopy = LOCATION_SECTION_COPY[status]
 
   return (
@@ -86,18 +122,27 @@ export function ServiceTrackingPage() {
           <h1 className="tracking-page__heading">Track Your Service</h1>
         </header>
 
+        {refreshError && (
+          <p className="tracking-section__hint" role="status" style={{ marginBottom: 'var(--space-md)' }}>
+            Unable to refresh right now. Still showing the latest available update.
+          </p>
+        )}
+
+        <div className="tracking-page__top">
+          <BookingSummaryCard tracking={tracking} />
+
+          <div className="tracking-section tracking-page__status-card">
+            <h2 className="tracking-section__heading">Service Status</h2>
+            <StatusTimeline status={status} />
+            <CurrentStatusMessage status={status} />
+          </div>
+        </div>
+
         <div className="tracking-page__grid">
           <div className="tracking-page__left">
-            <BookingSummaryCard booking={booking} service={service} />
+            <TechnicianSection technicianName={tracking.technicianName} technicianPhone={tracking.technicianPhone} />
 
-            <div className="tracking-section">
-              <StatusTimeline status={status} />
-              <CurrentStatusMessage status={status} />
-            </div>
-
-            <TechnicianSection technician={technician} />
-
-            {status === 'COMPLETED' && <CompletedSummary serviceId={booking.serviceId} />}
+            {status === 'completed' && <CompletedSummary serviceName={tracking.serviceName} />}
           </div>
 
           <div className="tracking-page__right">
@@ -110,9 +155,14 @@ export function ServiceTrackingPage() {
                   </>
                 )}
                 <TrackingMap
-                  customerLocation={customerLocation}
-                  technicianLocation={technicianLocation}
-                  showRoute={status === 'ON_THE_WAY'}
+                  customerLocation={tracking.latitude !== null && tracking.longitude !== null ? { lat: tracking.latitude, lng: tracking.longitude } : null}
+                  technicianLocation={
+                    tracking.technicianLatitude !== null && tracking.technicianLongitude !== null
+                      ? { lat: tracking.technicianLatitude, lng: tracking.technicianLongitude }
+                      : null
+                  }
+                  technicianLocationUpdatedAt={tracking.locationUpdatedAt}
+                  showRoute={status === 'technician_on_the_way'}
                 />
               </div>
             )}
@@ -121,18 +171,14 @@ export function ServiceTrackingPage() {
 
         {showChat && (
           <div className="tracking-page__chat-cta">
-            <button type="button" className="btn btn--accent" onClick={() => setChatOpen(true)}>
+            <button type="button" className="btn btn--accent" disabled title="Coming soon">
               <ChatIcon aria-hidden="true" /> Chat with Technician
             </button>
           </div>
         )}
 
-        <BookingDetailsCard booking={booking} />
+        <BookingDetailsCard tracking={tracking} />
       </div>
-
-      {technician && (
-        <ChatModal open={chatOpen} onClose={() => setChatOpen(false)} technicianName={technician.name} />
-      )}
     </article>
   )
 }

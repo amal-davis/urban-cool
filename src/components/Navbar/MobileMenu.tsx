@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
-import { CloseIcon } from '../icons/Icons'
+import { useAuth } from '../../lib/AuthContext'
+import { CloseIcon, UserIcon } from '../icons/Icons'
 import './MobileMenu.css'
 
 interface MobileMenuProps {
@@ -21,6 +22,8 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
  * into). See App.tsx for the page-root side of this.
  */
 export function MobileMenu({ id, open, onClose }: MobileMenuProps) {
+  const { status } = useAuth()
+  const isAuthenticated = status === 'authenticated'
   const panelRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -107,12 +110,20 @@ export function MobileMenu({ id, open, onClose }: MobileMenuProps) {
         </nav>
 
         <div className="mobile-menu__actions">
-          <NavLink to="/login" className="btn btn--ghost btn--block" onClick={onClose}>
-            Log In
-          </NavLink>
-          <NavLink to="/signup" className="btn btn--primary btn--block" onClick={onClose}>
-            Sign Up
-          </NavLink>
+          {isAuthenticated ? (
+            <NavLink to="/dashboard" className="btn btn--ghost btn--block" onClick={onClose}>
+              <UserIcon /> Account
+            </NavLink>
+          ) : (
+            <>
+              <NavLink to="/login" className="btn btn--ghost btn--block" onClick={onClose}>
+                Log In
+              </NavLink>
+              <NavLink to="/signup" className="btn btn--primary btn--block" onClick={onClose}>
+                Sign Up
+              </NavLink>
+            </>
+          )}
         </div>
       </div>
     </>

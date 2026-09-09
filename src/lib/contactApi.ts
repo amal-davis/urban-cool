@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+
 export interface ContactFormPayload {
   name: string
   email: string
@@ -5,39 +7,53 @@ export interface ContactFormPayload {
   message: string
 }
 
-export class ContactApiNotConfiguredError extends Error {
-  constructor() {
-    super('No contact-submission endpoint is configured yet.')
-    this.name = 'ContactApiNotConfiguredError'
+export class ContactApiError extends Error {
+  code?: string
+
+  constructor(message: string, code?: string) {
+    super(message)
+    this.name = 'ContactApiError'
+    this.code = code
   }
 }
 
+interface ApiErrorBody {
+  detail?: string
+  code?: string
+}
+
 /**
- * Intentionally isolated so a real backend call can replace the body below
- * without touching ContactForm.tsx at all — the form only ever calls this
- * function and handles whatever it resolves/rejects with.
+ * Talks to the Django backend's public contact endpoint (backend/bookings —
+ * see backend/bookings/views.py::contact, mounted at POST /api/contact/).
+ * Kept isolated like lib/authApi.ts: ContactForm only ever calls
+ * submitContactMessage and handles whatever it resolves/rejects with, so
+ * swapping the transport later never touches UI code.
  *
- * There is currently no contact-submission endpoint: the Django backend
- * (backend/bookings/urls.py) only exposes GET /api/health/. This does NOT
- * fake success — real user-typed messages don't get silently discarded
- * while looking like they were sent. It validates the payload shape (a
- * genuine, useful check) and then deliberately rejects, so the UI can show
- * an honest "not connected yet" state instead of a fabricated confirmation.
- *
- * To wire up a real backend later: add a POST endpoint (e.g.
- * `bookings/views.py::contact` at `/api/contact/`), then replace the body
- * of this function with a `fetch('/api/contact/', { method: 'POST', ... })`
- * call. Nothing outside this file needs to change.
+ * No `credentials: 'include'` here — unlike auth, a contact submission
+ * doesn't establish or rely on a session, so there's no cookie to send.
  */
 export async function submitContactMessage(payload: ContactFormPayload): Promise<void> {
-  if (!payload.name || !payload.email || !payload.phone || !payload.message) {
-    throw new Error('Missing required field.')
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/contact/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new ContactApiError('Network error. Check your connection and try again.', 'network_error')
   }
 
-  // Small delay so the loading state isn't a jarring instant flash — not a
-  // simulated network round-trip, just UI smoothing before the honest
-  // "not connected" result below.
-  await new Promise((resolve) => setTimeout(resolve, 300))
+  if (response.ok) {
+    return
+  }
 
-  throw new ContactApiNotConfiguredError()
+  let data: ApiErrorBody | null = null
+  try {
+    data = await response.json()
+  } catch {
+    // No body / not JSON — data stays null, handled by the fallback message below.
+  }
+
+  throw new ContactApiError(data?.detail ?? 'Something went wrong. Please try again.', data?.code)
 }

@@ -25,8 +25,12 @@ export interface Service {
   /** Illustration fallback for contexts that stay icon-based on purpose —
    *  the homepage's compact Book a Service tiles, My Bookings cards, and
    *  the Tracking page's booking summary, where a photo would be too small
-   *  to read well. Also `imageUrl`'s fallback wherever a photo isn't set. */
-  Icon: ComponentType<SVGProps<SVGSVGElement>>
+   *  to read well. Also `imageUrl`'s fallback wherever a photo isn't set.
+   *  Optional: services fetched from the backend (see lib/servicesApi.ts)
+   *  always carry a real `imageUrl` instead, so they never set this — only
+   *  the icon-based contexts above (which stay sourced from the hardcoded
+   *  list below) actually need it. */
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   /** Real photo — stock photography today (see assets/photos/CREDITS.md;
    *  none of these are real Urban Cool product photos yet), swappable for
    *  genuine photography or a backend-provided URL later with no component
@@ -57,10 +61,16 @@ export interface Service {
    *  PRICE_DISCLAIMER below) — the real cost is only ever confirmed by the
    *  booking/service flow, not this static page. */
   startingPrice: number
-  /** Label paired with `startingPrice`. Defaults to "Starting From" in the
-   *  UI when omitted — kept per-service (rather than hardcoded in the
-   *  component) so a future backend-driven service could use different
-   *  wording (e.g. "Estimated From") without a UI change. */
+  /** Upper bound of the estimated price range, paired with `startingPrice`
+   *  — set only for services fetched from the backend (see
+   *  lib/servicesApi.ts, which always has both bounds); the 4 hardcoded
+   *  services below never set it and keep showing a single starting
+   *  figure, unchanged from before this field existed. */
+  estimatedPriceTo?: number
+  /** Label paired with `startingPrice`. Defaults to "Starting From" (or
+   *  "Estimated Cost" once `estimatedPriceTo` is set) in the UI when
+   *  omitted — kept per-service (rather than hardcoded in the component) so
+   *  a service could use different wording without a UI change. */
   priceLabel?: string
   /** Booking CTA label, e.g. "Book AC Service". */
   ctaLabel: string

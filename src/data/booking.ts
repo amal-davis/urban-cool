@@ -1,16 +1,12 @@
-import { mockUser } from './dashboardData'
+import { fromE164 } from '../lib/indianPhone'
+import type { CustomerAddress, CustomerProfile } from '../lib/customerApi'
 import type { Service } from './services'
 
 export interface BookingCustomerDetails {
   fullName: string
   email: string
   /** Local 10-digit number — read-only in the booking form, never
-   *  re-collected. Sourced from the same mock "signed in user" the Personal
-   *  Dashboard already uses (see mockUser below): this project has no real
-   *  auth/session state on the frontend yet (OTP login only sets a backend
-   *  session cookie — see lib/authApi.ts — there's no React context reading
-   *  it back), so mockUser is the established stand-in everywhere a
-   *  "current user" is needed until that exists. */
+   *  re-collected. */
   phone: string
 }
 
@@ -49,24 +45,45 @@ export interface BookingFormValues {
   customer: BookingCustomerDetails
   address: BookingAddress
   location: BookingLocation
+  /** ISO yyyy-mm-dd, '' = not yet chosen — a plain <input type="date">
+   *  (see BookingDateField.tsx). */
+  bookingDate: string
+  /** One of TIME_SLOTS' own `value`s (data/bookingTimeSlots.ts), '' = not
+   *  yet chosen — see BookingTimeSlotField.tsx. */
+  bookingTime: string
   complaint: string
   images: BookingImageFile[]
 }
 
-/** Name/Email/Mobile prefill from the mock signed-in user — see the
- *  `phone` field's own comment above for why. Address/location/complaint/
- *  images always start blank; there's nothing to reasonably prefill them
- *  from. */
-export function createInitialBookingFormValues(service: Service): BookingFormValues {
+/** Name/Email/Mobile prefill from the real authenticated customer
+ *  (/booking/:id is a ProtectedRoute — see App.tsx — so `customer` is
+ *  always available by the time this runs). `savedAddress`, when the
+ *  customer has one on file (lib/customerApi.ts's getAddress()), seeds the
+ *  address fields too — still fully editable, never locked. Its single
+ *  `addressLine` has no house/street split the way BookingAddress does, so
+ *  it maps onto `houseNumber` whole, leaving `street` for the customer to
+ *  add/adjust if they want to split it up. Location/complaint/images
+ *  always start blank; there's nothing to reasonably prefill them from. */
+export function createInitialBookingFormValues(
+  service: Service,
+  customer: CustomerProfile,
+  savedAddress: CustomerAddress | null,
+): BookingFormValues {
   return {
     serviceId: service.id,
-    customer: {
-      fullName: mockUser.fullName,
-      email: mockUser.email,
-      phone: mockUser.phone,
-    },
-    address: { houseNumber: '', street: '', city: '', state: '', pincode: '' },
+    customer: { fullName: customer.name, email: customer.email, phone: fromE164(customer.mobileNumber) },
+    address: savedAddress
+      ? {
+          houseNumber: savedAddress.addressLine,
+          street: '',
+          city: savedAddress.city,
+          state: savedAddress.state,
+          pincode: savedAddress.pincode,
+        }
+      : { houseNumber: '', street: '', city: '', state: '', pincode: '' },
     location: { latitude: null, longitude: null, address: null },
+    bookingDate: '',
+    bookingTime: '',
     complaint: '',
     images: [],
   }

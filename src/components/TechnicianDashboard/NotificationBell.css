@@ -1,0 +1,140 @@
+/* No `position: relative` on this wrapper — the panel needs to anchor to
+   TechnicianHeader's own `.tech-header__end` (see NotificationBell.tsx's
+   own comment on why), not to this button's position within the row. This
+   stays a plain flex child; it exists only as the outside-click boundary. */
+.tech-notifications {
+  display: flex;
+}
+
+.tech-notifications__toggle {
+  position: relative;
+}
+
+.tech-notifications__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 2px solid var(--color-bg);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+}
+
+.tech-notifications__panel {
+  position: absolute;
+  top: calc(100% + var(--space-sm));
+  right: 0;
+  /* Clamped to the viewport width (minus a margin on both sides) rather
+     than a fixed px value — this is what keeps the panel from ever
+     overflowing a narrow phone screen, no separate mobile breakpoint
+     needed. */
+  width: min(360px, calc(100vw - 2 * var(--space-md)));
+  max-height: min(420px, 70dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+}
+
+.tech-notifications__header {
+  flex-shrink: 0;
+  padding: var(--space-md);
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tech-notifications__note {
+  margin: 0;
+  padding: var(--space-lg) var(--space-md);
+  text-align: center;
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.tech-notifications__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-xs);
+  overflow-y: auto;
+}
+
+.tech-notifications__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+}
+.tech-notifications__item.is-unread {
+  background: var(--color-surface);
+}
+
+.tech-notifications__item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary-deep);
+}
+.tech-notifications__item.is-unread .tech-notifications__item-icon {
+  background: color-mix(in oklch, var(--color-primary) 15%, var(--color-bg));
+}
+.tech-notifications__item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tech-notifications__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tech-notifications__message {
+  font-size: var(--text-label-size);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.4;
+}
+.tech-notifications__time {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.tech-notifications__footer-link {
+  flex-shrink: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+}
+.tech-notifications__footer-link:hover {
+  background: var(--color-surface);
+}
+
+@media (max-width: 400px) {
+  .tech-notifications__panel {
+    /* Same clamp formula, just a smaller margin on the smallest phones so
+       the panel still reads as comfortably inset, not edge-to-edge. */
+    width: min(360px, calc(100vw - 2 * var(--space-sm)));
+  }
+}

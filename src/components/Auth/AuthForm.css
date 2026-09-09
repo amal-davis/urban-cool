@@ -76,6 +76,58 @@
   color: var(--color-accent-deep);
 }
 
+/* Full Name / Email (ProfileStep) — plain text/email inputs. Scoped with
+   the `>` child combinator specifically so this never also matches
+   .phone-input's own inner <input> two levels down (MobileNumberStep),
+   which already has its own complete style block below and must stay
+   exactly as it is. Same tokens/radius/focus/error language as
+   ContactForm.css's .form-field input — declared separately here rather
+   than imported, per this file's own header comment on why each component
+   owns its own CSS in this project. */
+.form-field > input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  line-height: 1.5;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 160ms ease;
+}
+.form-field > input::placeholder {
+  color: var(--color-muted);
+  opacity: 1; /* Firefox otherwise dims placeholders further on its own */
+}
+.form-field > input:hover {
+  border-color: var(--color-muted);
+}
+.form-field > input:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 1px;
+  border-color: var(--color-primary-deep);
+}
+.form-field.has-error > input {
+  border-color: var(--color-accent);
+}
+
+/* Neutralizes Chrome/Edge/Safari's yellow autofill background (its own
+   internal UA style overrides plain `background`, so this repaints over it
+   with a huge inset shadow instead) so an autofilled Name/Email still reads
+   as this same styled input. */
+.form-field > input:-webkit-autofill,
+.form-field > input:-webkit-autofill:hover,
+.form-field > input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-bg) inset;
+  box-shadow: 0 0 0 1000px var(--color-bg) inset;
+  transition: background-color 600000s ease-in-out 0s;
+}
+
 /* Phone field — fixed +91 prefix beside the number input, styled as one
    continuous pill (border/radius/focus live on the wrapper, not the input)
    so it reads as a single "+91 | 9876543210" field. */
@@ -140,7 +192,6 @@
   font-weight: 700;
   color: var(--color-primary-deep);
   cursor: pointer;
-  text-decoration: underline;
 }
 .auth-resend__link:hover:not(:disabled) {
   color: var(--color-primary);
@@ -199,7 +250,6 @@
   font-weight: 700;
   color: var(--color-primary-deep);
   cursor: pointer;
-  text-decoration: underline;
 }
 .verified-phone__change:hover {
   color: var(--color-primary);

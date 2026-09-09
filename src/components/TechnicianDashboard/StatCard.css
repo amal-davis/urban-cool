@@ -1,0 +1,72 @@
+.tech-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.tech-stat-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary-deep);
+  margin-bottom: var(--space-xs);
+}
+.tech-stat-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tech-stat-card__value {
+  font-size: var(--text-headline-size);
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.1;
+}
+
+.tech-stat-card__label {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.tech-stat-card__link {
+  margin-top: var(--space-xs);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+}
+.tech-stat-card__link:hover {
+  color: var(--color-primary);
+}
+
+/* Grid — a small utility class applied by whichever page renders a group
+   of these, rather than each StatCard trying to guess its own column
+   count. */
+.tech-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .tech-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tech-stat-card {
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 400px) {
+  .tech-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}

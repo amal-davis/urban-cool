@@ -1,42 +1,91 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { services } from '../data/services'
+import type { Service } from '../data/services'
+import { getServiceDetail, ServicesApiError } from '../lib/servicesApi'
 import { ServiceDetailTopBar } from '../components/ServiceDetailPage/ServiceDetailTopBar'
 import { ServiceImage } from '../components/ServiceDetailPage/ServiceImage'
 import { IncludedServices } from '../components/ServiceDetailPage/IncludedServices'
 import { EstimatedPrice } from '../components/ServiceDetailPage/EstimatedPrice'
 import { BookingCTA } from '../components/ServiceDetailPage/BookingCTA'
 import { ServiceNotFound } from '../components/ServiceDetailPage/ServiceNotFound'
+import { ServiceDetailPageSkeleton } from './skeletons/ServiceDetailPageSkeleton'
 import { usePageMeta } from '../lib/usePageMeta'
 import '../components/ServiceDetailPage/ServiceDetailPage.css'
 
+type LoadState = 'loading' | 'not-found' | 'error' | 'ready'
+
 /**
- * Reusable service detail page — one route, one component, driven entirely
- * by which service's data matches the :serviceId param (see data/services.ts
- * for the Service shape). Nothing here is service-specific; swap the URL
- * (/service/ac, /service/refrigerator, /service/washing-machine,
- * /service/microwave) and every field below — image, name, description,
- * included services, price — changes with it.
+ * Reusable service detail page — one route (/service/:serviceId), one
+ * component, driven entirely by GET /api/services/:slug/ (see
+ * lib/servicesApi.ts) rather than a fixed local list. Swap the URL
+ * (/service/ac, /service/refrigerator, ...) — or add a brand-new service
+ * from Django Admin and visit its own slug — and every field below (image,
+ * name, description, included services, price) comes from that service's
+ * own database row, with no frontend change.
  *
- * Route param stays `id` (ac / washing-machine / microwave / refrigerator)
- * rather than an "-service" suffixed slug: that's the identifier every
- * other component in this project already keys services by (ServiceCard,
- * the Services page cards, SERVICE_ORDER). Introducing a second, differently
- * -shaped slug just for this page would mean maintaining two ids per
- * service for no real benefit — the brief itself calls the exact URL shape
- * illustrative ("do NOT assume this exact URL"), not a hard requirement.
+ * Route param stays `serviceId` (matching the service's slug) rather than
+ * being renamed — that's the identifier every other part of this project
+ * already keys services by (App.tsx's route, BookingCTA's /booking/:id
+ * link, BookingPage).
  */
 export function ServiceDetailPage() {
   const { serviceId } = useParams<{ serviceId: string }>()
-  const service = services.find((item) => item.id === serviceId)
+
+  const [state, setState] = useState<LoadState>('loading')
+  const [service, setService] = useState<Service | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+
+  useEffect(() => {
+    if (!serviceId) {
+      setState('not-found')
+      return
+    }
+
+    let cancelled = false
+    setState('loading')
+
+    getServiceDetail(serviceId)
+      .then((data) => {
+        if (cancelled) return
+        setService(data)
+        setState('ready')
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setState(error instanceof ServicesApiError && error.status === 404 ? 'not-found' : 'error')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [serviceId, reloadToken])
 
   usePageMeta(
     service ? `${service.ariaLabel} | Urban Cool` : 'Service Not Found | Urban Cool',
     service
-      ? `${service.shortDescription} Estimated starting from ₹${service.startingPrice}. Book ${service.name.toLowerCase()} with Urban Cool.`
+      ? `${service.shortDescription} Estimated cost ₹${service.startingPrice} - ₹${service.estimatedPriceTo}. Book ${service.name.toLowerCase()} with Urban Cool.`
       : "The service you're looking for could not be found on Urban Cool.",
   )
 
-  if (!service) {
+  if (state === 'loading') {
+    return <ServiceDetailPageSkeleton />
+  }
+
+  if (state === 'error') {
+    return (
+      <section className="service-detail service-detail--not-found">
+        <div className="container">
+          <ServiceNotFound
+            heading="Something Went Wrong"
+            description="We couldn't load this service right now. Please check your connection and try again."
+            onRetry={() => setReloadToken((n) => n + 1)}
+          />
+        </div>
+      </section>
+    )
+  }
+
+  if (state === 'not-found' || !service) {
     return (
       <section className="service-detail service-detail--not-found">
         <div className="container">
@@ -60,9 +109,16 @@ export function ServiceDetailPage() {
               {service.name}
             </h1>
             <p className="service-detail__description">{service.shortDescription}</p>
+            {service.detailIntro && service.detailIntro !== service.shortDescription && (
+              <p className="service-detail__description">{service.detailIntro}</p>
+            )}
 
             <IncludedServices items={service.includedServices} />
-            <EstimatedPrice startingPrice={service.startingPrice} priceLabel={service.priceLabel} />
+            <EstimatedPrice
+              startingPrice={service.startingPrice}
+              endingPrice={service.estimatedPriceTo}
+              priceLabel={service.priceLabel}
+            />
             <BookingCTA serviceId={service.id} ariaLabel={service.ctaLabel} />
           </div>
         </div>

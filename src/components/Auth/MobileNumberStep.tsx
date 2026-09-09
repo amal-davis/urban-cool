@@ -23,7 +23,8 @@ interface MobileNumberStepProps {
   submitLabel?: string
   submitLoadingLabel?: string
   /** Extra content under the submit button — Signup's "Already have an
-   *  account? Log In" link. */
+   *  account? Log In" link, and Login's own mirror "Don't have an account?
+   *  Sign Up" link. */
   footer?: ReactNode
 }
 

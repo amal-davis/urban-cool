@@ -1,0 +1,37 @@
+/* Mobile/tablet: horizontally scrollable row, snap-to-card, never allowed to
+   overflow the page itself (overflow-x lives on this inner track, not the
+   page body). Desktop: an even 5-column grid with a connecting line between
+   each card's icon, so the sequence reads as one continuous path. */
+.tech-workflow {
+  max-width: 100%;
+}
+
+.tech-workflow__track {
+  display: flex;
+  gap: var(--space-md);
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1024px) {
+  .tech-workflow__track {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+  .tech-workflow-card {
+    flex: initial;
+  }
+  .tech-workflow-card:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 46px;
+    left: calc(100% + 2px);
+    width: calc(var(--space-md) - 4px);
+    height: 2px;
+    background: var(--color-border);
+  }
+}

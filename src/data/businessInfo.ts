@@ -1,25 +1,26 @@
 /**
- * No verified Urban Cool address, phone number, or email exists anywhere in
- * this project — checked PRODUCT.md, DESIGN.md, the Django backend, and the
- * rest of the repo before writing this file. Everything below is a clearly
- * marked placeholder, not a real value. Replace it here once the real
- * details exist; every place that shows contact info (ContactInfo, Footer)
- * reads from this one file, so updating it updates the whole site.
+ * Real phone/email, provided directly by the business — every place that
+ * shows contact info (ContactInfo, Footer) reads from this one file, so
+ * updating it here updates the whole site. No verified street address
+ * exists yet (checked PRODUCT.md, DESIGN.md, the Django backend, and the
+ * rest of the repo), so that and the map query stay the earlier clearly
+ * marked placeholder/city-level values until a real one is provided.
  *
- * `phoneHref`/`emailHref` stay `null` until real values exist — a `tel:`/
- * `mailto:` link built from placeholder text would just be broken, so the
- * components render plain (non-clickable) text instead while these are null.
+ * `phoneHref`/`emailHref` stay `null` only while their display counterpart
+ * is a placeholder — a `tel:`/`mailto:` link built from placeholder text
+ * would just be broken, so the components render plain (non-clickable)
+ * text instead in that case. Both are real now, so both link.
  */
 export const businessInfo = {
   addressDisplay: '[Urban Cool Address — Kochi, Kerala]',
 
-  phoneDisplay: '[Urban Cool Phone Number]',
+  phoneDisplay: '+91 79079 57490',
   /** e.g. 'tel:+914812345678' once a real number exists. */
-  phoneHref: null as string | null,
+  phoneHref: 'tel:+917907957490' as string | null,
 
-  emailDisplay: '[Urban Cool Email Address]',
+  emailDisplay: 'urbancool07@gmail.com',
   /** e.g. 'mailto:hello@urbancool.example' once a real address exists. */
-  emailHref: null as string | null,
+  emailHref: 'mailto:urbancool07@gmail.com' as string | null,
 
   serviceArea: 'Kochi, Kerala',
 

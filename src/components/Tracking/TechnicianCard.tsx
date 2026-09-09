@@ -1,47 +1,39 @@
-import { PhoneIcon, StarIcon } from '../icons/Icons'
+import { PhoneIcon } from '../icons/Icons'
 import { formatGroupedIndianMobile, toE164 } from '../../lib/indianPhone'
 import { initialsFor } from '../../lib/initials'
-import type { TrackingTechnician } from '../../data/tracking'
 
 interface TechnicianCardProps {
-  technician: TrackingTechnician
+  name: string
+  phone: string
 }
 
 /**
- * Photo (or initials fallback — same pattern as ProfileHeader's avatar, via
- * lib/initials.ts) + name + rating + Call. `technician.image` failing to
- * load can't break the layout: the `<img>` only ever renders when `image`
- * is set, and a broken `src` still occupies the same fixed circular slot
- * the initials fallback would (see TrackingPage.css).
+ * Initials avatar (same pattern as ProfileHeader's own avatar, via
+ * lib/initials.ts — there's no technician photo field anywhere in the
+ * backend, so this never has a real image to fall back from) + name +
+ * Call. No rating/review count is shown — no rating system exists anywhere
+ * in this project (see TechnicianProfile/Booking models); showing one here
+ * would be fabricated.
  *
- * Call uses a real `tel:` link built from `technician.phone` — never a
- * hardcoded number — with a full accessible name ("Call technician
- * {name}"), not just an icon.
+ * Call uses a real `tel:` link built from `phone` — never a hardcoded
+ * number — with a full accessible name ("Call technician {name}"), not
+ * just an icon.
  */
-export function TechnicianCard({ technician }: TechnicianCardProps) {
+export function TechnicianCard({ name, phone }: TechnicianCardProps) {
   return (
     <div className="technician-card">
       <div className="technician-card__avatar" aria-hidden="true">
-        {technician.image ? (
-          <img src={technician.image} alt="" className="technician-card__avatar-image" />
-        ) : (
-          <span className="technician-card__avatar-initials">{initialsFor(technician.name)}</span>
-        )}
+        <span className="technician-card__avatar-initials">{initialsFor(name)}</span>
       </div>
 
       <div className="technician-card__info">
-        <span className="technician-card__name">{technician.name}</span>
-        <span className="technician-card__rating">
-          <StarIcon aria-hidden="true" />
-          {technician.rating.toFixed(1)}
-          <span className="technician-card__review-count">({technician.reviewCount}+)</span>
-        </span>
+        <span className="technician-card__name">{name}</span>
       </div>
 
       <a
-        href={`tel:${toE164(technician.phone)}`}
+        href={`tel:${toE164(phone)}`}
         className="technician-card__call icon-button"
-        aria-label={`Call technician ${technician.name}, +91 ${formatGroupedIndianMobile(technician.phone)}`}
+        aria-label={`Call technician ${name}, +91 ${formatGroupedIndianMobile(phone)}`}
       >
         <PhoneIcon aria-hidden="true" />
       </a>

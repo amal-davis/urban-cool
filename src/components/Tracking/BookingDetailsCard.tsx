@@ -1,9 +1,10 @@
 import { MapPinIcon } from '../icons/Icons'
 import { PRICE_DISCLAIMER } from '../../data/services'
-import type { Booking } from '../../data/dashboardData'
+import { formatBookingAddress, formatEstimatedCost } from '../../lib/bookingApi'
+import type { BookingTracking } from '../../lib/bookingApi'
 
 interface BookingDetailsCardProps {
-  booking: Booking
+  tracking: BookingTracking
 }
 
 /** "Additional Booking Information" — service address and estimated
@@ -12,7 +13,7 @@ interface BookingDetailsCardProps {
  *  mobile ordering. The price is explicitly an estimate (PRICE_DISCLAIMER,
  *  shared with the Service Detail and Booking pages) — never shown as a
  *  final payable total. */
-export function BookingDetailsCard({ booking }: BookingDetailsCardProps) {
+export function BookingDetailsCard({ tracking }: BookingDetailsCardProps) {
   return (
     <div className="tracking-section booking-details-card">
       <h2 className="tracking-section__heading">Booking Information</h2>
@@ -21,12 +22,14 @@ export function BookingDetailsCard({ booking }: BookingDetailsCardProps) {
         <span className="booking-details-card__label">
           <MapPinIcon aria-hidden="true" /> Service Address
         </span>
-        <span className="booking-details-card__value">{booking.address}</span>
+        <span className="booking-details-card__value">{formatBookingAddress(tracking)}</span>
       </div>
 
       <div className="booking-details-card__price">
         <span className="booking-details-card__label">Estimated Starting Price</span>
-        <span className="booking-details-card__price-value">₹{booking.price.toLocaleString('en-IN')}</span>
+        <span className="booking-details-card__price-value">
+          {formatEstimatedCost(tracking.estimatedMinPrice, tracking.estimatedMaxPrice)}
+        </span>
         <p className="booking-details-card__price-note">{PRICE_DISCLAIMER}</p>
       </div>
     </div>

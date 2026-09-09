@@ -22,6 +22,15 @@ export function toE164(localNumber: string): string {
   return `+91${localNumber}`
 }
 
+/** "+919876543210" -> "9876543210" — the inverse of toE164, for display
+ *  helpers (formatGroupedIndianMobile) that expect the bare local number.
+ *  Used wherever a Customer's stored mobile_number (always the +91 form —
+ *  see accounts/models.py) needs to be shown or re-submitted as a plain
+ *  10-digit field. */
+export function fromE164(value: string): string {
+  return value.replace(/^\+91/, '')
+}
+
 /** "9876543210" -> "98765 43210" — readable grouping for display only. */
 export function formatGroupedIndianMobile(localNumber: string): string {
   return `${localNumber.slice(0, 5)} ${localNumber.slice(5)}`

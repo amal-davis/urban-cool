@@ -22,7 +22,10 @@ export function ServiceImage({ service }: ServiceImageProps) {
       {imageUrl ? (
         <img src={imageUrl} alt={`${ariaLabel} image`} className="service-detail__image-photo" />
       ) : (
-        <Icon className="service-detail__image-icon" aria-hidden="true" />
+        // Icon-less fallback only reachable if a hardcoded service (data/
+        // services.ts) somehow omitted both — every backend-driven service
+        // (see lib/servicesApi.ts) always sets imageUrl instead.
+        Icon && <Icon className="service-detail__image-icon" aria-hidden="true" />
       )}
     </div>
   )

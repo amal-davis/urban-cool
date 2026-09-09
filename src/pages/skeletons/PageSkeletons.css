@@ -230,3 +230,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Technician Dashboard — shared Suspense fallback for every /technician/*
+   route (see skeletons/TechnicianDashboardSkeleton.tsx). Plain padded block,
+   not the app-shell's own sidebar/header — this shows only for the brief
+   first-chunk-load flash, before TechnicianLayout itself ever mounts. */
+.skeleton-tech-dashboard {
+  padding: var(--space-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.skeleton-tech-dashboard__header {
+  height: 32px;
+  width: min(320px, 60%);
+  margin-bottom: var(--space-lg);
+}
+.skeleton-tech-dashboard__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.skeleton-tech-dashboard__stat {
+  height: 96px;
+  border-radius: var(--radius-lg);
+}
+.skeleton-tech-dashboard__card {
+  height: 140px;
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-md);
+}

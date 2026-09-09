@@ -1,0 +1,5 @@
+.tech-dashboard-earnings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}

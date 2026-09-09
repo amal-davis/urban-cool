@@ -49,6 +49,11 @@ p {
 
 a {
   color: var(--color-primary);
+  /* No underline anywhere by default — every link/button in this project is
+     told apart from body text by color/weight/hover state instead, never
+     the browser's default underline. Anything that still wants one sets it
+     explicitly on its own selector rather than relying on this baseline. */
+  text-decoration: none;
 }
 
 button {

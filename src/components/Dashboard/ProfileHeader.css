@@ -74,12 +74,31 @@
   height: 15px;
 }
 
-.profile-summary__edit {
+.profile-summary__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.profile-summary__edit,
+.profile-summary__logout {
   gap: var(--space-xs);
 }
-.profile-summary__edit svg {
+.profile-summary__edit svg,
+.profile-summary__logout svg {
   width: 16px;
   height: 16px;
+}
+
+/* Same treatment as SettingsSection.css's .settings-logout — Dispatch Red
+   at rest (not just on hover), so both places this action appears read as
+   the same "this ends your session" affordance. */
+.profile-summary__logout {
+  color: var(--color-accent-deep);
+  border-color: var(--color-accent);
+}
+.profile-summary__logout:hover {
+  background: color-mix(in oklch, var(--color-accent) 8%, var(--color-bg));
+  border-color: var(--color-accent-deep);
 }
 
 @media (max-width: 480px) {
@@ -89,5 +108,11 @@
   .profile-summary__avatar {
     width: 80px;
     height: 80px;
+  }
+  .profile-summary__actions {
+    width: 100%;
+  }
+  .profile-summary__actions .btn {
+    flex: 1;
   }
 }

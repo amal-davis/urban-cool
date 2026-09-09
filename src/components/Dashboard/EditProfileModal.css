@@ -29,10 +29,135 @@
   height: 16px;
   color: var(--color-success);
 }
-.edit-profile-form__phone-hint {
+.edit-profile-form__phone-change {
+  align-self: flex-start;
+  margin-top: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+  cursor: pointer;
+}
+.edit-profile-form__phone-change:hover {
+  color: var(--color-primary);
+}
+.edit-profile-form__phone-change:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Change-mobile sub-steps — same vocabulary as AuthForm.css's back button/
+   subtext/phone-input/notice/resend-link (kept as a local copy here too,
+   per this file's own convention above, rather than importing across
+   component boundaries). */
+.auth-form__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: var(--space-xs) 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.auth-form__back:hover {
+  color: var(--color-primary-deep);
+}
+.auth-form__back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.auth-form__subtext {
+  font-size: var(--text-body-size);
+  line-height: 1.5;
+  color: var(--color-muted);
+  margin: 0;
+}
+.auth-form__subtext strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.auth-form__notice {
+  font-size: var(--text-label-size);
+  line-height: 1.5;
+  margin: 0;
+}
+.auth-form__notice--error {
+  color: var(--color-accent-deep);
+}
+
+.auth-resend {
+  text-align: center;
   font-size: var(--text-label-size);
   color: var(--color-muted);
-  margin-top: 2px;
+  margin: 0;
+}
+.auth-resend__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+  cursor: pointer;
+}
+.auth-resend__link:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+.auth-resend__link:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.phone-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  overflow: hidden;
+  transition: border-color 160ms ease;
+}
+.phone-input:focus-within {
+  border-color: var(--color-primary-deep);
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 1px;
+}
+.form-field.has-error .phone-input {
+  border-color: var(--color-accent);
+}
+.phone-input__prefix {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-md);
+  font-weight: 600;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+.phone-input input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  padding: 0.75rem var(--space-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: transparent;
 }
 
 /* Same field vocabulary as AuthForm.css/ContactForm.css — kept as its own

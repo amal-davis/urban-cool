@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { CheckCircleIcon } from '../icons/Icons'
 import type { Service } from '../../data/services'
 import './ServiceDetail.css'
@@ -23,7 +24,10 @@ export function ServiceDetail({ service, reverse }: ServiceDetailProps) {
           {imageUrl ? (
             <img src={imageUrl} alt={`${ariaLabel} image`} className="service-card-detail__photo" />
           ) : (
-            <Icon className="service-card-detail__icon" aria-hidden="true" />
+            // Icon-less fallback only reachable if a hardcoded service (data/
+            // services.ts) somehow omitted both — every backend-driven
+            // service (see lib/servicesApi.ts) always sets imageUrl instead.
+            Icon && <Icon className="service-card-detail__icon" aria-hidden="true" />
           )}
         </div>
 
@@ -43,11 +47,15 @@ export function ServiceDetail({ service, reverse }: ServiceDetailProps) {
             ))}
           </ul>
 
-          {/* TODO: wire to the real booking flow once it exists — same
-              "Coming soon" pattern used across the site. */}
-          <button type="button" className="btn btn--accent" title="Coming soon">
+          {/* Links to this service's own /service/:id page (same route
+              ServiceCard.tsx's homepage tiles use) — that page is where
+              "Services Include", the estimated price, and the real Book Now
+              button (BookingCTA.tsx) live, so this card doesn't duplicate
+              them. Previously an inert "Coming soon" button, from before
+              that page existed. */}
+          <Link to={`/service/${id}`} className="btn btn--accent">
             {ctaLabel}
-          </button>
+          </Link>
         </div>
       </div>
     </article>

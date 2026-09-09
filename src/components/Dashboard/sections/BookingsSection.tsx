@@ -1,37 +1,58 @@
 import { useState } from 'react'
-import { CalendarIcon, ClockIcon, MapPinIcon } from '../../icons/Icons'
+import { CalendarIcon, MapPinIcon } from '../../icons/Icons'
 import { Modal } from '../../Modal/Modal'
 import { StatusBadge } from '../StatusBadge'
 import { BookingCard } from './BookingCard'
-import { bookingStatusLabels } from '../../../data/dashboardData'
-import type { Booking, BookingStatus } from '../../../data/dashboardData'
+import { formatBookingAddress, formatBookingDate, formatEstimatedCost, statusGroup } from '../../../lib/bookingApi'
+import type { BookingListItem, BookingStatusGroup } from '../../../lib/bookingApi'
 import './BookingsSection.css'
 import './SectionCard.css'
 
 interface BookingsSectionProps {
-  bookings: Booking[]
+  bookings: BookingListItem[]
+  loading: boolean
 }
 
-type FilterId = 'all' | BookingStatus
+type FilterId = 'all' | BookingStatusGroup
+
+const GROUP_LABELS: Record<BookingStatusGroup, string> = {
+  upcoming: 'Upcoming',
+  'in-progress': 'In Progress',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
 
 const filters: { id: FilterId; label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'upcoming', label: bookingStatusLabels.upcoming },
-  { id: 'in-progress', label: bookingStatusLabels['in-progress'] },
-  { id: 'completed', label: bookingStatusLabels.completed },
-  { id: 'cancelled', label: bookingStatusLabels.cancelled },
+  { id: 'upcoming', label: GROUP_LABELS.upcoming },
+  { id: 'in-progress', label: GROUP_LABELS['in-progress'] },
+  { id: 'completed', label: GROUP_LABELS.completed },
+  { id: 'cancelled', label: GROUP_LABELS.cancelled },
 ]
 
-/** My Bookings — static booking history with an All/status filter and a
- *  details modal per card. Read-only (no reschedule/cancel mutation): the
- *  brief scopes CRUD-style frontend state to Address only, bookings here
- *  are display + filter, matching what "static booking cards" asks for. */
-export function BookingsSection({ bookings }: BookingsSectionProps) {
+/** My Bookings — real booking history (see UserDashboard.tsx, which fetches
+ *  it via lib/bookingApi.ts) with an All/status filter and a details modal
+ *  per card. Read-only here: a booking's status only ever changes via the
+ *  admin/technician workflow, never a customer-side mutation. */
+export function BookingsSection({ bookings, loading }: BookingsSectionProps) {
   const [filter, setFilter] = useState<FilterId>('all')
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<BookingListItem | null>(null)
 
-  const visibleBookings = filter === 'all' ? bookings : bookings.filter((booking) => booking.status === filter)
+  const visibleBookings =
+    filter === 'all' ? bookings : bookings.filter((booking) => statusGroup(booking.status) === filter)
   const activeFilterLabel = filters.find((item) => item.id === filter)?.label
+
+  if (loading) {
+    return (
+      <div className="section-card" role="status" aria-busy="true">
+        <span className="visually-hidden">Loading bookings…</span>
+        <div className="section-empty">
+          <CalendarIcon />
+          <p className="section-text">Loading your bookings…</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -84,25 +105,25 @@ export function BookingsSection({ bookings }: BookingsSectionProps) {
                 <dt>
                   <CalendarIcon /> Date
                 </dt>
-                <dd>{selectedBooking.date}</dd>
-              </div>
-              <div className="booking-detail__row">
-                <dt>
-                  <ClockIcon /> Time
-                </dt>
-                <dd>{selectedBooking.timeSlot}</dd>
+                <dd>{formatBookingDate(selectedBooking.bookingDate)}</dd>
               </div>
               <div className="booking-detail__row">
                 <dt>
                   <MapPinIcon /> Address
                 </dt>
-                <dd>{selectedBooking.address}</dd>
+                <dd>{formatBookingAddress(selectedBooking)}</dd>
               </div>
               <div className="booking-detail__row">
-                <dt>Amount</dt>
-                <dd>₹{selectedBooking.price.toLocaleString('en-IN')}</dd>
+                <dt>Estimated Cost</dt>
+                <dd>{formatEstimatedCost(selectedBooking.estimatedMinPrice, selectedBooking.estimatedMaxPrice)}</dd>
               </div>
             </dl>
+            {/* "assigned" and every status after it means a technician has
+                actually been attached — pending/confirmed haven't reached
+                that step yet. */}
+            {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
+              <p className="booking-detail__note">Technician will be assigned soon.</p>
+            )}
           </div>
         )}
       </Modal>

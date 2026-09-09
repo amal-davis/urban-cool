@@ -1,0 +1,60 @@
+/* App shell — sidebar (fixed drawer on mobile, sticky column on desktop —
+   see TechnicianSidebar.css) + a main column of header/content. min-width:0
+   on the main column is what stops a long job/customer name from forcing
+   the whole shell wider than the viewport (flex items default to
+   min-width:auto, which ignores their own overflow rules otherwise). */
+.tech-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-surface);
+}
+
+.tech-layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tech-layout__content {
+  flex: 1;
+  padding: var(--space-lg);
+  max-width: 1400px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  .tech-layout__content {
+    padding: var(--space-md);
+  }
+}
+
+/* Shared vertical rhythm between dashboard sections — every /technician/*
+   page's top-level sections use this rather than each hand-rolling its own
+   margin, same "spacing.2xl between full sections" rule DESIGN.md's own Do's
+   list calls for. */
+.tech-section {
+  margin-bottom: var(--space-2xl);
+}
+.tech-section:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .tech-section {
+    margin-bottom: var(--space-xl);
+  }
+}
+
+/* Shared "nothing to show" placeholder — every filtered job list uses this
+   for a zero-result state rather than each page re-typing the same block. */
+.tech-empty-note {
+  padding: var(--space-lg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-muted);
+  font-size: var(--text-body-size);
+  text-align: center;
+}

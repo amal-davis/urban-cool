@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ContactApiNotConfiguredError, submitContactMessage } from '../../lib/contactApi'
+import { ContactApiError, submitContactMessage } from '../../lib/contactApi'
+import { Toast } from '../Toast/Toast'
 import './ContactForm.css'
 
 type FieldName = 'name' | 'email' | 'phone' | 'message'
 type FormValues = Record<FieldName, string>
 type FormErrors = Partial<Record<FieldName, string>>
-type Status = 'idle' | 'submitting' | 'not-connected' | 'error'
+type Status = 'idle' | 'submitting' | 'error'
 
 const initialValues: FormValues = { name: '', email: '', phone: '', message: '' }
 
@@ -44,6 +45,8 @@ export function ContactForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({})
   const [status, setStatus] = useState<Status>('idle')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
@@ -81,13 +84,18 @@ export function ContactForm() {
     setStatus('submitting')
     try {
       await submitContactMessage(values)
-      // submitContactMessage never resolves successfully today (see its own
-      // comment) — this branch exists for when a real endpoint is wired up.
       setStatus('idle')
+      setErrorMessage(null)
       setValues(initialValues)
       setTouched({})
+      setToastMessage("Message sent — we'll get back to you soon.")
     } catch (error) {
-      setStatus(error instanceof ContactApiNotConfiguredError ? 'not-connected' : 'error')
+      setStatus('error')
+      setErrorMessage(
+        error instanceof ContactApiError
+          ? error.message
+          : 'Something went wrong sending your message. Please try again, or contact us directly using the phone or email above.',
+      )
     }
   }
 
@@ -180,18 +188,13 @@ export function ContactForm() {
         {status === 'submitting' ? 'Sending…' : 'Send Message'}
       </button>
 
-      {status === 'not-connected' && (
-        <p className="contact-form__notice" role="status">
-          Message submission isn't connected to a live backend yet. In the meantime, please reach out
-          directly using the phone or email above.
-        </p>
-      )}
-      {status === 'error' && (
+      {status === 'error' && errorMessage && (
         <p className="contact-form__notice contact-form__notice--error" role="alert">
-          Something went wrong sending your message. Please try again, or contact us directly using the
-          phone or email above.
+          {errorMessage}
         </p>
       )}
+
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
     </form>
   )
 }

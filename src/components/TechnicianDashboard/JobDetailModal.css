@@ -1,0 +1,116 @@
+.tech-job-detail__note {
+  color: var(--color-muted);
+  padding: var(--space-md) 0;
+}
+
+.tech-job-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.tech-job-detail__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.tech-job-detail__ref {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.tech-job-detail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin: 0;
+}
+.tech-job-detail__field dt {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+  margin-bottom: var(--space-xs);
+}
+.tech-job-detail__field dd {
+  margin: 0;
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+}
+.tech-job-detail__field a {
+  color: var(--color-primary);
+}
+.tech-job-detail__field--full {
+  grid-column: 1 / -1;
+}
+
+.tech-job-detail__commission-status {
+  display: inline-block;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+.tech-job-detail__commission-status.is-paid {
+  color: var(--color-success);
+  background: color-mix(in oklch, var(--color-success) 12%, var(--color-bg));
+}
+
+.tech-job-detail__photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-sm);
+}
+.tech-job-detail__photos img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.tech-job-detail__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-md);
+}
+.tech-job-detail__timeline li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tech-job-detail__timeline-status {
+  font-size: var(--text-body-size);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.tech-job-detail__timeline-time {
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.tech-job-detail__error {
+  color: var(--color-accent-deep);
+  font-size: var(--text-label-size);
+  margin: 0;
+}
+
+.tech-job-detail__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .tech-job-detail__grid {
+    grid-template-columns: 1fr;
+  }
+  .tech-job-detail__actions .btn {
+    width: 100%;
+  }
+}

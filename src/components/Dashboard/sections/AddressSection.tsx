@@ -1,235 +1,275 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { MapPinIcon, PencilIcon, PlusIcon, TrashIcon } from '../../icons/Icons'
 import { Modal } from '../../Modal/Modal'
-import type { Address } from '../../../data/dashboardData'
+import { Skeleton } from '../../Skeleton/Skeleton'
+import { isValidPincode } from '../../../lib/validation'
+import { CustomerApiError } from '../../../lib/customerApi'
+import type { AddressInput, CustomerAddress } from '../../../lib/customerApi'
 import './AddressSection.css'
 import './SectionCard.css'
 
 interface AddressSectionProps {
-  addresses: Address[]
-  onAdd: (values: Omit<Address, 'id' | 'isDefault'>) => void
-  onUpdate: (id: string, values: Omit<Address, 'id' | 'isDefault'>) => void
-  onDelete: (id: string) => void
+  /** null = no address saved yet (backend returned 404 — see
+   *  UserDashboard.tsx). undefined would also mean "haven't checked yet",
+   *  but `loading` below already covers that distinctly. */
+  address: CustomerAddress | null
+  loading: boolean
+  onAdd: (values: AddressInput) => Promise<void>
+  onUpdate: (values: AddressInput) => Promise<void>
+  onDelete: () => Promise<void>
 }
 
-type FormValues = Omit<Address, 'id' | 'isDefault'>
+const blankForm: AddressInput = { addressLine: '', city: '', state: '', pincode: '' }
 
-const blankForm: FormValues = {
-  label: '',
-  recipientName: '',
-  line1: '',
-  line2: '',
-  city: '',
-  state: '',
-  postalCode: '',
-  country: 'India',
+function messageFor(error: unknown, fallback: string): string {
+  return error instanceof CustomerApiError ? error.message : fallback
 }
 
-/** My Address. Add/Edit share one form (in a Modal); Delete confirms
- *  inline on the card itself rather than a native confirm() dialog, so the
- *  whole interaction stays inside this design system. All three are local
- *  React state only (props callbacks own the actual add/update/delete —
- *  see UserDashboard.tsx) — no backend call, per the frontend-only brief. */
-export function AddressSection({ addresses, onAdd, onUpdate, onDelete }: AddressSectionProps) {
+/** My Address — a single saved address (add/edit/delete), matching what
+ *  the backend's Address model actually stores (accounts/models.py):
+ *  address_line/city/state/pincode. No label/multiple-addresses/default
+ *  badge like the old frontend-only mock had — this app has exactly one
+ *  address per customer. */
+export function AddressSection({ address, loading, onAdd, onUpdate, onDelete }: AddressSectionProps) {
   const [formOpen, setFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [values, setValues] = useState<FormValues>(blankForm)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  function openAddForm() {
-    setEditingId(null)
-    setValues(blankForm)
+  function openForm() {
     setFormOpen(true)
   }
 
-  function openEditForm(address: Address) {
-    setEditingId(address.id)
-    setValues({
-      label: address.label,
-      recipientName: address.recipientName,
-      line1: address.line1,
-      line2: address.line2,
-      city: address.city,
-      state: address.state,
-      postalCode: address.postalCode,
-      country: address.country,
-    })
-    setFormOpen(true)
+  async function handleDelete() {
+    setDeleteError(null)
+    setDeleting(true)
+    try {
+      await onDelete()
+      setConfirmingDelete(false)
+    } catch (error) {
+      setDeleteError(messageFor(error, 'Could not remove your address. Please try again.'))
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const trimmed: FormValues = {
-      label: values.label.trim() || 'Address',
-      recipientName: values.recipientName.trim(),
-      line1: values.line1.trim(),
-      line2: values.line2?.trim() || undefined,
-      city: values.city.trim(),
-      state: values.state.trim(),
-      postalCode: values.postalCode.trim(),
-      country: values.country.trim() || 'India',
-    }
-    if (!trimmed.recipientName || !trimmed.line1 || !trimmed.city || !trimmed.state || !trimmed.postalCode) return
-
-    if (editingId) {
-      onUpdate(editingId, trimmed)
-    } else {
-      onAdd(trimmed)
-    }
-    setFormOpen(false)
+  if (loading) {
+    return (
+      <div className="section-card" role="status" aria-busy="true">
+        <span className="visually-hidden">Loading address…</span>
+        <div className="address-skeleton">
+          <Skeleton className="address-skeleton__line" />
+          <Skeleton className="address-skeleton__line address-skeleton__line--short" />
+        </div>
+      </div>
+    )
   }
 
   return (
     <>
-      {addresses.length === 0 ? (
+      {address === null ? (
         <div className="section-card">
           <div className="section-empty">
             <MapPinIcon />
-            <p className="section-text">No saved addresses yet.</p>
-            <button type="button" className="btn btn--primary" onClick={openAddForm}>
+            <p className="section-text">No address added yet.</p>
+            <button type="button" className="btn btn--primary" onClick={openForm}>
               <PlusIcon /> Add Address
             </button>
           </div>
         </div>
       ) : (
-        <>
-          {addresses.map((address) => (
-            <div key={address.id} className="section-card address-card">
-              <div className="address-card__header">
-                <span className="address-card__label">{address.label}</span>
-                {address.isDefault && <span className="address-card__default">Default</span>}
+        <div className="section-card address-card">
+          <p className="address-card__lines">
+            {address.addressLine}
+            <br />
+            {address.city}, {address.state} - {address.pincode}
+          </p>
+
+          {deleteError && (
+            <p className="address-form__notice address-form__notice--error" role="alert">
+              {deleteError}
+            </p>
+          )}
+
+          {confirmingDelete ? (
+            <div className="address-card__confirm">
+              <span>Delete this address?</span>
+              <div className="address-card__confirm-actions">
+                <button type="button" className="btn btn--ghost" onClick={() => setConfirmingDelete(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn--accent" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
               </div>
-              <p className="address-card__name">{address.recipientName}</p>
-              <p className="address-card__lines">
-                {address.line1}
-                {address.line2 && <>, {address.line2}</>}
-                <br />
-                {address.city}, {address.state} - {address.postalCode}
-                <br />
-                {address.country}
-              </p>
-
-              {confirmDeleteId === address.id ? (
-                <div className="address-card__confirm">
-                  <span>Delete this address?</span>
-                  <div className="address-card__confirm-actions">
-                    <button type="button" className="btn btn--ghost" onClick={() => setConfirmDeleteId(null)}>
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--accent"
-                      onClick={() => {
-                        onDelete(address.id)
-                        setConfirmDeleteId(null)
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="address-card__actions">
-                  <button type="button" className="btn btn--ghost" onClick={() => openEditForm(address)}>
-                    <PencilIcon /> Edit
-                  </button>
-                  <button type="button" className="btn btn--ghost" onClick={() => setConfirmDeleteId(address.id)}>
-                    <TrashIcon /> Delete
-                  </button>
-                </div>
-              )}
             </div>
-          ))}
-
-          <button type="button" className="btn btn--ghost address-section__add" onClick={openAddForm}>
-            <PlusIcon /> Add Address
-          </button>
-        </>
+          ) : (
+            <div className="address-card__actions">
+              <button type="button" className="btn btn--ghost" onClick={openForm}>
+                <PencilIcon /> Edit
+              </button>
+              <button type="button" className="btn btn--ghost" onClick={() => setConfirmingDelete(true)}>
+                <TrashIcon /> Delete
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editingId ? 'Edit Address' : 'Add Address'}>
-        <AddressFormFields values={values} onChange={setValues} onSubmit={handleSubmit} onCancel={() => setFormOpen(false)} />
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={address ? 'Edit Address' : 'Add Address'}>
+        <AddressFormFields
+          initialValues={
+            address
+              ? { addressLine: address.addressLine, city: address.city, state: address.state, pincode: address.pincode }
+              : blankForm
+          }
+          isEdit={address !== null}
+          onSave={address ? onUpdate : onAdd}
+          onCancel={() => setFormOpen(false)}
+          onSaved={() => setFormOpen(false)}
+        />
       </Modal>
     </>
   )
 }
 
 interface AddressFormFieldsProps {
-  values: FormValues
-  onChange: (values: FormValues) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  initialValues: AddressInput
+  isEdit: boolean
+  onSave: (values: AddressInput) => Promise<void>
   onCancel: () => void
+  onSaved: () => void
 }
 
-function AddressFormFields({ values, onChange, onSubmit, onCancel }: AddressFormFieldsProps) {
-  function set<K extends keyof FormValues>(key: K, value: FormValues[K]) {
-    onChange({ ...values, [key]: value })
+function AddressFormFields({ initialValues, isEdit, onSave, onCancel, onSaved }: AddressFormFieldsProps) {
+  const [values, setValues] = useState<AddressInput>(initialValues)
+  const [touched, setTouched] = useState<Partial<Record<keyof AddressInput, boolean>>>({})
+  const [saving, setSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const addressLineRef = useRef<HTMLInputElement>(null)
+  const cityRef = useRef<HTMLInputElement>(null)
+  const stateRef = useRef<HTMLInputElement>(null)
+  const pincodeRef = useRef<HTMLInputElement>(null)
+
+  function set<K extends keyof AddressInput>(key: K, value: AddressInput[K]) {
+    setValues((current) => ({ ...current, [key]: value }))
+  }
+
+  const errors = {
+    addressLine: !values.addressLine.trim() ? 'Enter your address.' : null,
+    city: !values.city.trim() ? 'Enter your city.' : null,
+    state: !values.state.trim() ? 'Enter your state.' : null,
+    pincode: !isValidPincode(values.pincode) ? 'Enter a valid 6-digit PIN code.' : null,
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setTouched({ addressLine: true, city: true, state: true, pincode: true })
+
+    if (errors.addressLine) return addressLineRef.current?.focus()
+    if (errors.city) return cityRef.current?.focus()
+    if (errors.state) return stateRef.current?.focus()
+    if (errors.pincode) return pincodeRef.current?.focus()
+
+    setApiError(null)
+    setSaving(true)
+    try {
+      await onSave({
+        addressLine: values.addressLine.trim(),
+        city: values.city.trim(),
+        state: values.state.trim(),
+        pincode: values.pincode.trim(),
+      })
+      onSaved()
+    } catch (error) {
+      setApiError(messageFor(error, `Could not ${isEdit ? 'update' : 'save'} your address. Please try again.`))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <form className="address-form" onSubmit={onSubmit} noValidate>
-      <div className="address-form__row address-form__row--single">
-        <div className="form-field">
-          <label htmlFor="address-label">Label</label>
-          <input id="address-label" value={values.label} onChange={(e) => set('label', e.target.value)} placeholder="Home" />
-        </div>
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="address-name">Recipient Name</label>
+    <form className="address-form" onSubmit={handleSubmit} noValidate>
+      <div className={`form-field${touched.addressLine && errors.addressLine ? ' has-error' : ''}`}>
+        <label htmlFor="address-line">House / Street / Area</label>
         <input
-          id="address-name"
-          required
-          value={values.recipientName}
-          onChange={(e) => set('recipientName', e.target.value)}
+          ref={addressLineRef}
+          id="address-line"
+          value={values.addressLine}
+          onChange={(e) => set('addressLine', e.target.value)}
+          onBlur={() => setTouched((t) => ({ ...t, addressLine: true }))}
         />
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="address-line1">House / Street</label>
-        <input id="address-line1" required value={values.line1} onChange={(e) => set('line1', e.target.value)} />
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="address-line2">Landmark / Area (optional)</label>
-        <input id="address-line2" value={values.line2 ?? ''} onChange={(e) => set('line2', e.target.value)} />
+        {touched.addressLine && errors.addressLine && (
+          <span className="form-field__error" role="alert">
+            {errors.addressLine}
+          </span>
+        )}
       </div>
 
       <div className="address-form__row">
-        <div className="form-field">
+        <div className={`form-field${touched.city && errors.city ? ' has-error' : ''}`}>
           <label htmlFor="address-city">City</label>
-          <input id="address-city" required value={values.city} onChange={(e) => set('city', e.target.value)} />
+          <input
+            ref={cityRef}
+            id="address-city"
+            value={values.city}
+            onChange={(e) => set('city', e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, city: true }))}
+          />
+          {touched.city && errors.city && (
+            <span className="form-field__error" role="alert">
+              {errors.city}
+            </span>
+          )}
         </div>
-        <div className="form-field">
+        <div className={`form-field${touched.state && errors.state ? ' has-error' : ''}`}>
           <label htmlFor="address-state">State</label>
-          <input id="address-state" required value={values.state} onChange={(e) => set('state', e.target.value)} />
+          <input
+            ref={stateRef}
+            id="address-state"
+            value={values.state}
+            onChange={(e) => set('state', e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, state: true }))}
+          />
+          {touched.state && errors.state && (
+            <span className="form-field__error" role="alert">
+              {errors.state}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="address-form__row">
-        <div className="form-field">
-          <label htmlFor="address-postal">Postal Code</label>
-          <input
-            id="address-postal"
-            required
-            inputMode="numeric"
-            value={values.postalCode}
-            onChange={(e) => set('postalCode', e.target.value)}
-          />
-        </div>
-        <div className="form-field">
-          <label htmlFor="address-country">Country</label>
-          <input id="address-country" value={values.country} onChange={(e) => set('country', e.target.value)} />
-        </div>
+      <div className={`form-field${touched.pincode && errors.pincode ? ' has-error' : ''}`}>
+        <label htmlFor="address-pincode">PIN Code</label>
+        <input
+          ref={pincodeRef}
+          id="address-pincode"
+          inputMode="numeric"
+          maxLength={6}
+          value={values.pincode}
+          onChange={(e) => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+          onBlur={() => setTouched((t) => ({ ...t, pincode: true }))}
+        />
+        {touched.pincode && errors.pincode && (
+          <span className="form-field__error" role="alert">
+            {errors.pincode}
+          </span>
+        )}
       </div>
+
+      {apiError && (
+        <p className="address-form__notice address-form__notice--error" role="alert">
+          {apiError}
+        </p>
+      )}
 
       <div className="address-form__actions">
         <button type="button" className="btn btn--ghost" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="btn btn--primary">
-          Save Address
+        <button type="submit" className="btn btn--primary" disabled={saving}>
+          {saving ? 'Saving…' : 'Save Address'}
         </button>
       </div>
     </form>

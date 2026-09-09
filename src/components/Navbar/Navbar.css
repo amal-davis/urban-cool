@@ -94,6 +94,24 @@
   flex-shrink: 0;
 }
 
+/* Notification bell + mobile toggle, grouped (see Navbar.tsx's own comment
+   on why) — plain flex row, no gap override needed beyond the bar's own
+   `gap` between this and .header-actions before it.
+
+   position: relative — NotificationBell.css's own dropdown panel anchors
+   here (right: 0), not to the bell button itself: this wrapper's right
+   edge is the header bar's actual right edge (flush with .container's own
+   padding-inline, the same inset every other section's content respects),
+   which is what that panel's width-clamp math is measured against. See
+   NotificationBell.css's own comment on why anchoring to the button
+   instead breaks that math on narrow phone screens. */
+.site-header__end {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 /* Mobile toggle — hidden on desktop */
 
 .menu-toggle {
@@ -118,9 +136,16 @@
   .header-actions {
     display: none;
   }
+  /* Carries the "push to the right edge" job .menu-toggle used to do alone
+     — now that the bell sits beside it (still visible on mobile, unlike
+     .header-actions above), the auto margin has to live on their shared
+     wrapper instead. Putting it on .menu-toggle itself too would split the
+     free space between the two and shove them apart from each other. */
+  .site-header__end {
+    margin-left: auto;
+  }
   .menu-toggle {
     display: inline-flex;
-    margin-left: auto;
   }
   /* Centered in the bar, not just "left of the leftover space" — absolute
      + transform against .site-header__bar's own relative positioning,

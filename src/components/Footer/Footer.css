@@ -96,7 +96,6 @@
 }
 .site-footer__contact-item a:hover {
   color: var(--color-primary-deep);
-  text-decoration: underline;
 }
 
 .site-footer__bottom {

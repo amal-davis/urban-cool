@@ -321,3 +321,37 @@ export function SendIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+/** Technician sidebar — My Jobs / Upcoming Jobs. */
+export function BriefcaseIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="7.5" width="18" height="12" rx="2" />
+      <path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5" />
+      <path d="M3 12.5h18" />
+      <path d="M10.5 12.5v1.5h3v-1.5" />
+    </svg>
+  )
+}
+
+/** Technician sidebar — Performance; Performance Summary section heading. */
+export function ChartBarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 20V10" />
+      <path d="M12 20V4" />
+      <path d="M20 20v-7" />
+      <path d="M4 20h16" />
+    </svg>
+  )
+}
+
+/** Job workflow — Upload Before/After Photos step. */
+export function CameraIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 8.5a1.5 1.5 0 0 1 1.5-1.5h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+      <circle cx="12" cy="13" r="3.25" />
+    </svg>
+  )
+}

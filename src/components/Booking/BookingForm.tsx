@@ -3,12 +3,24 @@ import type { FormEvent } from 'react'
 import { CustomerDetailsForm } from './CustomerDetailsForm'
 import { AddressForm } from './AddressForm'
 import { LocationPicker } from './LocationPicker'
+import { BookingDateField } from './BookingDateField'
+import { BookingTimeSlotField } from './BookingTimeSlotField'
 import { ComplaintDetails } from './ComplaintDetails'
 import { ImageUploader } from './ImageUploader'
 import { validateBookingForm, hasBookingFormErrors } from '../../lib/bookingValidation'
 import type { BookingFormValues } from '../../data/booking'
 
-type TouchedField = 'fullName' | 'email' | 'houseNumber' | 'street' | 'city' | 'state' | 'pincode' | 'complaint'
+type TouchedField =
+  | 'fullName'
+  | 'email'
+  | 'houseNumber'
+  | 'street'
+  | 'city'
+  | 'state'
+  | 'pincode'
+  | 'bookingDate'
+  | 'bookingTime'
+  | 'complaint'
 type TouchedFields = Record<TouchedField, boolean>
 
 const NO_FIELDS_TOUCHED: TouchedFields = {
@@ -19,6 +31,8 @@ const NO_FIELDS_TOUCHED: TouchedFields = {
   city: false,
   state: false,
   pincode: false,
+  bookingDate: false,
+  bookingTime: false,
   complaint: false,
 }
 
@@ -50,6 +64,8 @@ export function BookingForm({ values, onChange, onImageError, onContinue }: Book
   const cityRef = useRef<HTMLInputElement>(null)
   const stateRef = useRef<HTMLSelectElement>(null)
   const pincodeRef = useRef<HTMLInputElement>(null)
+  const bookingDateRef = useRef<HTMLInputElement>(null)
+  const bookingTimeRef = useRef<HTMLDivElement>(null)
   const complaintRef = useRef<HTMLTextAreaElement>(null)
 
   function markTouched(field: TouchedField) {
@@ -66,6 +82,8 @@ export function BookingForm({ values, onChange, onImageError, onContinue }: Book
       city: true,
       state: true,
       pincode: true,
+      bookingDate: true,
+      bookingTime: true,
       complaint: true,
     })
 
@@ -83,6 +101,8 @@ export function BookingForm({ values, onChange, onImageError, onContinue }: Book
       ['city', cityRef],
       ['state', stateRef],
       ['pincode', pincodeRef],
+      ['bookingDate', bookingDateRef],
+      ['bookingTime', bookingTimeRef],
       ['complaint', complaintRef],
     ]
     const firstInvalid = refsInOrder.find(([field]) => errors[field])
@@ -121,6 +141,24 @@ export function BookingForm({ values, onChange, onImageError, onContinue }: Book
       />
 
       <LocationPicker location={values.location} onLocationChange={(location) => onChange({ ...values, location })} />
+
+      <BookingDateField
+        value={values.bookingDate}
+        error={errors.bookingDate}
+        touched={touched.bookingDate}
+        onChange={(bookingDate) => onChange({ ...values, bookingDate })}
+        onBlur={() => markTouched('bookingDate')}
+        inputRef={bookingDateRef}
+      />
+
+      <BookingTimeSlotField
+        value={values.bookingTime}
+        error={errors.bookingTime}
+        touched={touched.bookingTime}
+        onChange={(bookingTime) => onChange({ ...values, bookingTime })}
+        onBlur={() => markTouched('bookingTime')}
+        groupRef={bookingTimeRef}
+      />
 
       <ComplaintDetails
         value={values.complaint}

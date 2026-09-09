@@ -1,0 +1,227 @@
+/* No position: relative here — the panel below anchors to .site-header__end
+   (Navbar.css), not to this wrapper. This button isn't actually flush with
+   the header's right edge (the hamburger toggle sits to its right, both
+   grouped inside .site-header__end — see Navbar.tsx's own comment); if the
+   panel anchored here instead, its right edge would land short of the
+   header's true edge by the hamburger's own width + gap, which silently
+   breaks the width-clamp math below (it's computed against the viewport
+   edge, not against wherever this button happens to sit) and lets the
+   panel's left edge run off narrow phone screens. */
+.customer-notifications {
+  display: flex;
+}
+
+.customer-notifications__toggle {
+  position: relative;
+}
+
+.customer-notifications__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 2px solid var(--color-bg);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+}
+
+.customer-notifications__panel {
+  position: absolute;
+  top: calc(100% + var(--space-sm));
+  /* Anchored to .site-header__end (Navbar.css's own position: relative),
+     not to .customer-notifications above — this right: 0 lands exactly on
+     the header bar's real right edge (the same edge .container's own
+     padding-inline keeps every other section's content off), which is what
+     the width formula below is actually measured against. */
+  right: 0;
+  /* Clamped to the viewport width, minus the container's own inset on both
+     sides — since the panel's right edge already sits exactly at that
+     inset (see the anchor comment above), this keeps the left edge at that
+     same 24px inset too, never past the viewport edge, at any width down
+     to a phone's 320-375px. min() caps it at a sane desktop width instead
+     of stretching edge-to-edge on a wide screen. */
+  width: min(380px, calc(100vw - 2 * var(--container-padding)));
+  max-height: min(440px, 70dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+}
+
+.customer-notifications__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  font-size: var(--text-body-size);
+  font-weight: 700;
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.customer-notifications__mark-all {
+  border: none;
+  background: none;
+  padding: var(--space-xs) var(--space-xs);
+  margin: calc(var(--space-xs) * -1);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.customer-notifications__mark-all:hover {
+  background: var(--color-surface);
+}
+.customer-notifications__mark-all:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+}
+
+.customer-notifications__note {
+  margin: 0;
+  padding: var(--space-lg) var(--space-md);
+  text-align: center;
+  font-size: var(--text-label-size);
+  color: var(--color-muted);
+}
+
+.customer-notifications__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-xs);
+  overflow-y: auto;
+}
+
+/* Each item is a full-width <button>, not just an <li> — the whole row is
+   the click/tap target (per this feature's own "large enough touch
+   targets" requirement), not just the title text. */
+.customer-notifications__item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: var(--space-sm);
+  /* Taller than the technician bell's own item padding — that panel is
+     desktop-dashboard-first; this one needs a comfortable >=44px tap
+     target at phone widths too. */
+  padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-sm);
+  border: none;
+  background: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+}
+.customer-notifications__item:hover,
+.customer-notifications__item:focus-visible {
+  background: var(--color-surface);
+}
+.customer-notifications__item:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: -2px;
+}
+.customer-notifications__item.is-unread {
+  background: color-mix(in oklch, var(--color-primary) 6%, var(--color-bg));
+}
+.customer-notifications__item.is-unread:hover,
+.customer-notifications__item.is-unread:focus-visible {
+  background: color-mix(in oklch, var(--color-primary) 12%, var(--color-bg));
+}
+
+.customer-notifications__item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary-deep);
+}
+.customer-notifications__item.is-unread .customer-notifications__item-icon {
+  background: color-mix(in oklch, var(--color-primary) 18%, var(--color-bg));
+}
+.customer-notifications__item-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.customer-notifications__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.customer-notifications__item-title {
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.customer-notifications__message {
+  font-size: var(--text-label-size);
+  font-weight: 500;
+  color: var(--color-muted);
+  line-height: 1.4;
+  /* Two lines max — a long complaint-driven message shouldn't blow out the
+     panel's fixed width; the full text is still available on the booking's
+     own tracking page this item navigates to. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.customer-notifications__time {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+/* Unread indicator dot — paired with the background tint above (is-unread),
+   never color alone, per DESIGN.md's No-Gray-Status Rule applied to "read
+   vs unread" the same way it already applies to booking status. */
+.customer-notifications__dot {
+  flex-shrink: 0;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+
+.customer-notifications__footer-link {
+  flex-shrink: 0;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: none;
+  font-family: var(--font-sans);
+  text-align: center;
+  font-size: var(--text-label-size);
+  font-weight: 700;
+  color: var(--color-primary-deep);
+  cursor: pointer;
+}
+.customer-notifications__footer-link:hover {
+  background: var(--color-surface);
+}
+.customer-notifications__footer-link:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: -2px;
+}

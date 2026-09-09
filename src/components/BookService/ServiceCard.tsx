@@ -21,7 +21,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
   return (
     <Link to={`/service/${id}`} className="service-card" aria-label={ariaLabel}>
       <span className="service-card__image-wrap">
-        <Icon className="service-card__image" />
+        {/* This tile is always fed one of the hardcoded services below
+            (see BookServiceSection.tsx), which always set Icon — guarded
+            only because Service.Icon is optional (backend-driven services,
+            which never reach this component, don't set it). */}
+        {Icon && <Icon className="service-card__image" />}
       </span>
       <span className="service-card__name">{name}</span>
     </Link>
