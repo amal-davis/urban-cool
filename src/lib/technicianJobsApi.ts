@@ -1,5 +1,7 @@
 import type { BookingStatus } from './bookingApi'
-import { ACTIVE_STATUS_ORDER, statusGroup } from './bookingApi'
+import { ACTIVE_STATUS_ORDER, bookingStatusLabels, bookingStatusMessages, statusGroup } from './bookingApi'
+import { timeSlotLabel as demoTimeSlotLabel } from '../data/bookingTimeSlots'
+import { DEMO_MODE, demoDelay } from './demoMode'
 
 /**
  * Technician jobs API — GET /api/technician/jobs/, GET /api/technician/
@@ -137,9 +139,205 @@ function mapJob(data: TechnicianJobApiShape): TechnicianJob {
   }
 }
 
+// --- Demo mode (see demoMode.ts) — a small, self-contained, in-memory job
+// store (list + detail derive from the same seed), following this file's
+// own established convention of not sharing state across modules.
+
+interface DemoJobSeed {
+  id: number
+  bookingRef: string
+  serviceName: string
+  customerName: string
+  customerPhone: string
+  addressLine: string
+  city: string
+  state: string
+  pincode: string
+  bookingDate: string
+  timeSlot: string
+  status: BookingStatus
+  estimatedMinPrice: number
+  estimatedMaxPrice: number
+  complaint: string
+  commissionAmount: number | null
+  commissionPaid: boolean
+  /** Hours-ago offsets for each tracking event, oldest first — same
+   *  reasoning as bookingApi.ts's own demo seed. */
+  historyHoursAgo: number[]
+  historyStatuses: BookingStatus[]
+}
+
+function demoIsoDate(daysFromToday: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + daysFromToday)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function demoIsoTimestamp(hoursAgo: number): string {
+  return new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
+}
+
+const demoJobs: DemoJobSeed[] = [
+  {
+    id: 201,
+    bookingRef: 'UCBK2001',
+    serviceName: 'AC Service',
+    customerName: 'Priya Nair',
+    customerPhone: '+919846011122',
+    addressLine: '18, Panampilly Nagar',
+    city: 'Kochi',
+    state: 'Kerala',
+    pincode: '682036',
+    bookingDate: demoIsoDate(0),
+    timeSlot: '09:00',
+    status: 'in_progress',
+    estimatedMinPrice: 499,
+    estimatedMaxPrice: 799,
+    complaint: 'AC is not cooling properly and makes a rattling noise.',
+    commissionAmount: null,
+    commissionPaid: false,
+    historyHoursAgo: [4, 3, 2, 1, 0.3],
+    historyStatuses: ['pending', 'confirmed', 'assigned', 'technician_on_the_way', 'in_progress'],
+  },
+  {
+    id: 202,
+    bookingRef: 'UCBK2002',
+    serviceName: 'Washing Machine',
+    customerName: 'Rahul Menon',
+    customerPhone: '+919846022233',
+    addressLine: '7, MG Road',
+    city: 'Kochi',
+    state: 'Kerala',
+    pincode: '682016',
+    bookingDate: demoIsoDate(0),
+    timeSlot: '13:00',
+    status: 'assigned',
+    estimatedMinPrice: 399,
+    estimatedMaxPrice: 699,
+    complaint: 'Washing machine drum is not spinning.',
+    commissionAmount: null,
+    commissionPaid: false,
+    historyHoursAgo: [5, 4],
+    historyStatuses: ['pending', 'confirmed'],
+  },
+  {
+    id: 203,
+    bookingRef: 'UCBK2003',
+    serviceName: 'Refrigerator',
+    customerName: 'Sneha Thomas',
+    customerPhone: '+919846033344',
+    addressLine: '42, Kaloor',
+    city: 'Kochi',
+    state: 'Kerala',
+    pincode: '682017',
+    bookingDate: demoIsoDate(1),
+    timeSlot: '11:00',
+    status: 'assigned',
+    estimatedMinPrice: 449,
+    estimatedMaxPrice: 749,
+    complaint: 'Refrigerator is making a loud noise.',
+    commissionAmount: null,
+    commissionPaid: false,
+    historyHoursAgo: [6, 5],
+    historyStatuses: ['pending', 'confirmed'],
+  },
+  {
+    id: 204,
+    bookingRef: 'UCBK2004',
+    serviceName: 'Microwave',
+    customerName: 'Vishnu Pillai',
+    customerPhone: '+919846044455',
+    addressLine: '3, Edappally',
+    city: 'Kochi',
+    state: 'Kerala',
+    pincode: '682024',
+    bookingDate: demoIsoDate(3),
+    timeSlot: '15:00',
+    status: 'assigned',
+    estimatedMinPrice: 299,
+    estimatedMaxPrice: 549,
+    complaint: 'Microwave sparks inside when heating.',
+    commissionAmount: null,
+    commissionPaid: false,
+    historyHoursAgo: [8, 7],
+    historyStatuses: ['pending', 'confirmed'],
+  },
+  {
+    id: 205,
+    bookingRef: 'UCBK2005',
+    serviceName: 'AC Service',
+    customerName: 'Anjali Varma',
+    customerPhone: '+919846055566',
+    addressLine: '29, Fort Kochi',
+    city: 'Kochi',
+    state: 'Kerala',
+    pincode: '682001',
+    bookingDate: demoIsoDate(-5),
+    timeSlot: '17:00',
+    status: 'completed',
+    estimatedMinPrice: 499,
+    estimatedMaxPrice: 799,
+    complaint: 'Annual AC maintenance and gas top-up.',
+    commissionAmount: 150,
+    commissionPaid: true,
+    historyHoursAgo: [128, 127, 126, 125, 124, 123, 122],
+    historyStatuses: [
+      'pending',
+      'confirmed',
+      'assigned',
+      'technician_on_the_way',
+      'arrived',
+      'in_progress',
+      'completed',
+    ],
+  },
+]
+
+function demoJob(seed: DemoJobSeed): TechnicianJob {
+  return {
+    id: seed.id,
+    bookingRef: seed.bookingRef,
+    serviceName: seed.serviceName,
+    customerName: seed.customerName,
+    addressLine: seed.addressLine,
+    city: seed.city,
+    state: seed.state,
+    pincode: seed.pincode,
+    bookingDate: seed.bookingDate,
+    timeSlot: seed.timeSlot,
+    timeSlotLabel: demoTimeSlotLabel(seed.timeSlot),
+    status: seed.status,
+    statusLabel: bookingStatusLabels[seed.status],
+    estimatedMinPrice: seed.estimatedMinPrice,
+    estimatedMaxPrice: seed.estimatedMaxPrice,
+    complaint: seed.complaint,
+  }
+}
+
+function demoJobDetail(seed: DemoJobSeed): TechnicianJobDetail {
+  return {
+    ...demoJob(seed),
+    customerPhone: seed.customerPhone,
+    images: [],
+    trackingHistory: seed.historyStatuses.map((status, index) => ({
+      status,
+      statusLabel: bookingStatusLabels[status],
+      note: bookingStatusMessages[status],
+      createdAt: demoIsoTimestamp(seed.historyHoursAgo[index]),
+    })),
+    commissionAmount: seed.commissionAmount,
+    commissionPaid: seed.commissionPaid,
+    updatedAt: demoIsoTimestamp(seed.historyHoursAgo[seed.historyHoursAgo.length - 1] ?? 0),
+  }
+}
+
 /** The authenticated technician's own assigned bookings, in whatever order
  *  the backend returns (booking_date, then most-recently-created first). */
 export async function getTechnicianJobs(): Promise<TechnicianJob[]> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return demoJobs.map(demoJob)
+  }
   const data = await request<TechnicianJobApiShape[]>('GET', '/api/technician/jobs/')
   return data.map(mapJob)
 }
@@ -198,6 +396,12 @@ function mapJobDetail(data: TechnicianJobDetailApiShape): TechnicianJobDetail {
  *  doesn't exist or isn't assigned to this technician, same as every other
  *  ownership-checked detail endpoint in this project. */
 export async function getTechnicianJobDetail(id: number): Promise<TechnicianJobDetail> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const seed = demoJobs.find((job) => job.id === id)
+    if (!seed) throw new TechnicianJobsApiError('Job not found.', 404)
+    return demoJobDetail(seed)
+  }
   const data = await request<TechnicianJobDetailApiShape>('GET', `/api/technician/jobs/${id}/`)
   return mapJobDetail(data)
 }
@@ -232,6 +436,15 @@ export const nextStatusActionLabels: Partial<Record<BookingStatus, string>> = {
  *  TechnicianJobSerializer, not the detail shape), so callers can patch a
  *  job list in place with the result. */
 export async function updateTechnicianJobStatus(id: number, status: BookingStatus): Promise<TechnicianJob> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const seed = demoJobs.find((job) => job.id === id)
+    if (!seed) throw new TechnicianJobsApiError('Job not found.', 404)
+    seed.status = status
+    seed.historyStatuses.push(status)
+    seed.historyHoursAgo.push(0)
+    return demoJob(seed)
+  }
   const data = await request<TechnicianJobApiShape>('PATCH', `/api/technician/jobs/${id}/status/`, { status })
   return mapJob(data)
 }

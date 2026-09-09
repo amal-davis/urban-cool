@@ -1,4 +1,7 @@
 import { toE164 } from './indianPhone'
+import { DEMO_MODE, demoDelay } from './demoMode'
+import { clearDemoCustomerSession, getDemoCustomerSession, setDemoCustomerSession } from './demoSession'
+import type { DemoCustomerProfile } from './demoSession'
 
 /**
  * Authenticated customer API — profile, address, logout, and the OTP-gated
@@ -111,9 +114,26 @@ function mapProfile(data: ProfileApiShape): CustomerProfile {
   }
 }
 
+function demoProfileFrom(session: DemoCustomerProfile): CustomerProfile {
+  return {
+    name: session.name,
+    email: session.email,
+    mobileNumber: session.mobileNumber,
+    memberSince: session.memberSince ? formatMemberSince(session.memberSince) : null,
+  }
+}
+
 /** Also doubles as "am I logged in?" — AuthContext calls this on mount and
  *  treats a 401/403 as unauthenticated rather than an error to surface. */
 export async function getProfile(): Promise<CustomerProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const session = getDemoCustomerSession()
+    // No demo login has happened yet in this tab — mirrors a real 401 so
+    // AuthContext's existing "not signed in" handling applies unchanged.
+    if (!session) throw new CustomerApiError('Not authenticated.', { status: 401 })
+    return demoProfileFrom(session)
+  }
   return mapProfile(await request<ProfileApiShape>('GET', '/api/customer/profile/'))
 }
 
@@ -122,6 +142,14 @@ export async function getProfile(): Promise<CustomerProfile> {
  *  call could do to change it even if it tried. See sendChangeMobileOtp/
  *  verifyChangeMobileOtp below for the only way that number changes. */
 export async function updateProfile(name: string, email: string): Promise<CustomerProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const session = getDemoCustomerSession()
+    if (!session) throw new CustomerApiError('Not authenticated.', { status: 401 })
+    const updated = { ...session, name, email }
+    setDemoCustomerSession(updated)
+    return demoProfileFrom(updated)
+  }
   return mapProfile(await request<ProfileApiShape>('PATCH', '/api/customer/profile/', { name, email }))
 }
 
@@ -158,9 +186,19 @@ function addressPayload(values: AddressInput) {
   return { address_line: values.addressLine, city: values.city, state: values.state, pincode: values.pincode }
 }
 
+// In-memory only, per this project's established "local mutable state, not
+// a cross-file store" convention (same reasoning as e.g. bookingApi.ts's own
+// mock bookings) — null until the demo customer adds one, same as a real new
+// customer would have none yet.
+let demoAddress: CustomerAddress | null = null
+
 /** null = no address saved yet (backend returns 404) — a normal, expected
  *  state for a new customer, not an error. Any other failure still throws. */
 export async function getAddress(): Promise<CustomerAddress | null> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return demoAddress
+  }
   try {
     return mapAddress(await request<AddressApiShape>('GET', '/api/customer/address/'))
   } catch (error) {
@@ -170,20 +208,40 @@ export async function getAddress(): Promise<CustomerAddress | null> {
 }
 
 export async function createAddress(values: AddressInput): Promise<CustomerAddress> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    demoAddress = { id: 1, ...values }
+    return demoAddress
+  }
   return mapAddress(await request<AddressApiShape>('POST', '/api/customer/address/', addressPayload(values)))
 }
 
 export async function updateAddress(values: AddressInput): Promise<CustomerAddress> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    demoAddress = { id: demoAddress?.id ?? 1, ...values }
+    return demoAddress
+  }
   return mapAddress(await request<AddressApiShape>('PATCH', '/api/customer/address/', addressPayload(values)))
 }
 
 export async function deleteAddress(): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    demoAddress = null
+    return
+  }
   await request<void>('DELETE', '/api/customer/address/')
 }
 
 // --- Logout ---
 
 export async function logout(): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    clearDemoCustomerSession()
+    return
+  }
   await request<void>('POST', '/api/auth/logout/')
 }
 
@@ -197,6 +255,10 @@ export interface SendChangeMobileOtpResult {
 }
 
 export async function sendChangeMobileOtp(localNumber: string): Promise<SendChangeMobileOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return { expiresIn: 300, resendAfter: 30, otpLength: 6 }
+  }
   const data = await request<{ expires_in: number; resend_after: number; otp_length: number }>(
     'POST',
     '/api/auth/change-mobile/send-otp/',
@@ -206,6 +268,14 @@ export async function sendChangeMobileOtp(localNumber: string): Promise<SendChan
 }
 
 export async function verifyChangeMobileOtp(localNumber: string, otp: string): Promise<CustomerProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const session = getDemoCustomerSession()
+    if (!session) throw new CustomerApiError('Not authenticated.', { status: 401 })
+    const updated = { ...session, mobileNumber: toE164(localNumber) }
+    setDemoCustomerSession(updated)
+    return demoProfileFrom(updated)
+  }
   return mapProfile(
     await request<ProfileApiShape>('POST', '/api/auth/change-mobile/verify-otp/', {
       phone: toE164(localNumber),

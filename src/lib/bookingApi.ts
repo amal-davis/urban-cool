@@ -8,6 +8,9 @@
  * getCsrfToken()/the error class rather than an import, per this project's
  * established convention of not sharing small snippets across files).
  */
+import { services as demoServiceList } from '../data/services'
+import { timeSlotLabel } from '../data/bookingTimeSlots'
+import { DEMO_MODE, demoDelay, nextDemoId } from './demoMode'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -265,14 +268,231 @@ function mapBookingDetail(data: BookingDetailApiShape): BookingDetail {
   }
 }
 
+// --- Demo mode (see demoMode.ts) — a small, self-contained, in-memory
+// booking store (list + detail + tracking all derive from the same seed, so
+// the three views of one booking can never disagree), following this
+// file's own established convention of not sharing state across modules.
+
+interface DemoBookingSeed {
+  id: number
+  bookingRef: string
+  serviceSlug: string
+  serviceName: string
+  /** ISO yyyy-mm-dd. */
+  bookingDate: string
+  timeSlot: string
+  addressLine: string
+  city: string
+  state: string
+  pincode: string
+  latitude: number | null
+  longitude: number | null
+  estimatedMinPrice: number
+  estimatedMaxPrice: number
+  complaint: string
+  status: BookingStatus
+  technicianName: string | null
+  technicianPhone: string | null
+  technicianLatitude: number | null
+  technicianLongitude: number | null
+  /** Hours-ago offsets for each tracking event, oldest first — paired 1:1
+   *  with `historyStatuses`. Also doubles as createdAt (first entry) and
+   *  updatedAt (last entry). */
+  historyHoursAgo: number[]
+  historyStatuses: BookingStatus[]
+}
+
+function isoDate(daysFromToday: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + daysFromToday)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function isoTimestamp(hoursAgo: number): string {
+  return new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
+}
+
+const DEMO_ADDRESS = {
+  addressLine: '24/A, Marine Drive Road',
+  city: 'Kochi',
+  state: 'Kerala',
+  pincode: '682031',
+  latitude: 9.9658,
+  longitude: 76.2421,
+}
+
+const DEMO_TECHNICIAN = { name: 'Arun Kumar', phone: '+919847012345', latitude: 9.9312, longitude: 76.2673 }
+
+let demoBookings: DemoBookingSeed[] = [
+  {
+    id: 101,
+    bookingRef: 'UCBK1001',
+    serviceSlug: 'ac',
+    serviceName: 'AC Service',
+    bookingDate: isoDate(0),
+    timeSlot: '11:00',
+    ...DEMO_ADDRESS,
+    estimatedMinPrice: 499,
+    estimatedMaxPrice: 799,
+    complaint: 'AC is cooling poorly and making a rattling noise.',
+    status: 'technician_on_the_way',
+    technicianName: DEMO_TECHNICIAN.name,
+    technicianPhone: DEMO_TECHNICIAN.phone,
+    technicianLatitude: DEMO_TECHNICIAN.latitude,
+    technicianLongitude: DEMO_TECHNICIAN.longitude,
+    historyHoursAgo: [3, 2.5, 2, 0.2],
+    historyStatuses: ['pending', 'confirmed', 'assigned', 'technician_on_the_way'],
+  },
+  {
+    id: 102,
+    bookingRef: 'UCBK1002',
+    serviceSlug: 'washing-machine',
+    serviceName: 'Washing Machine',
+    bookingDate: isoDate(-6),
+    timeSlot: '15:00',
+    ...DEMO_ADDRESS,
+    estimatedMinPrice: 399,
+    estimatedMaxPrice: 699,
+    complaint: 'Washing machine is not draining properly.',
+    status: 'completed',
+    technicianName: DEMO_TECHNICIAN.name,
+    technicianPhone: DEMO_TECHNICIAN.phone,
+    technicianLatitude: DEMO_ADDRESS.latitude,
+    technicianLongitude: DEMO_ADDRESS.longitude,
+    historyHoursAgo: [150, 149, 148, 147, 146, 145, 144],
+    historyStatuses: [
+      'pending',
+      'confirmed',
+      'assigned',
+      'technician_on_the_way',
+      'arrived',
+      'in_progress',
+      'completed',
+    ],
+  },
+  {
+    id: 103,
+    bookingRef: 'UCBK1003',
+    serviceSlug: 'refrigerator',
+    serviceName: 'Refrigerator',
+    bookingDate: isoDate(3),
+    timeSlot: '09:00',
+    ...DEMO_ADDRESS,
+    estimatedMinPrice: 449,
+    estimatedMaxPrice: 749,
+    complaint: 'Refrigerator is not cooling enough and has frost build-up.',
+    status: 'confirmed',
+    technicianName: null,
+    technicianPhone: null,
+    technicianLatitude: null,
+    technicianLongitude: null,
+    historyHoursAgo: [1, 0.5],
+    historyStatuses: ['pending', 'confirmed'],
+  },
+  {
+    id: 104,
+    bookingRef: 'UCBK1004',
+    serviceSlug: 'microwave',
+    serviceName: 'Microwave',
+    bookingDate: isoDate(-10),
+    timeSlot: '13:00',
+    ...DEMO_ADDRESS,
+    estimatedMinPrice: 299,
+    estimatedMaxPrice: 549,
+    complaint: 'Microwave is not heating food.',
+    status: 'cancelled',
+    technicianName: null,
+    technicianPhone: null,
+    technicianLatitude: null,
+    technicianLongitude: null,
+    historyHoursAgo: [240, 239, 238],
+    historyStatuses: ['pending', 'confirmed', 'cancelled'],
+  },
+]
+
+function demoListItem(seed: DemoBookingSeed): BookingListItem {
+  return {
+    id: seed.id,
+    bookingRef: seed.bookingRef,
+    serviceSlug: seed.serviceSlug,
+    serviceName: seed.serviceName,
+    bookingDate: seed.bookingDate,
+    timeSlot: seed.timeSlot,
+    timeSlotLabel: timeSlotLabel(seed.timeSlot),
+    addressLine: seed.addressLine,
+    city: seed.city,
+    state: seed.state,
+    pincode: seed.pincode,
+    estimatedMinPrice: seed.estimatedMinPrice,
+    estimatedMaxPrice: seed.estimatedMaxPrice,
+    status: seed.status,
+    createdAt: isoTimestamp(seed.historyHoursAgo[0] ?? 0),
+  }
+}
+
+function demoDetail(seed: DemoBookingSeed): BookingDetail {
+  return {
+    ...demoListItem(seed),
+    latitude: seed.latitude,
+    longitude: seed.longitude,
+    complaint: seed.complaint,
+    images: [],
+    technicianName: seed.technicianName,
+    technicianPhone: seed.technicianPhone,
+    updatedAt: isoTimestamp(seed.historyHoursAgo[seed.historyHoursAgo.length - 1] ?? 0),
+  }
+}
+
+function demoTracking(seed: DemoBookingSeed): BookingTracking {
+  return {
+    id: seed.id,
+    bookingRef: seed.bookingRef,
+    serviceName: seed.serviceName,
+    bookingDate: seed.bookingDate,
+    timeSlot: seed.timeSlot,
+    timeSlotLabel: timeSlotLabel(seed.timeSlot),
+    status: seed.status,
+    statusLabel: bookingStatusLabels[seed.status],
+    addressLine: seed.addressLine,
+    city: seed.city,
+    state: seed.state,
+    pincode: seed.pincode,
+    latitude: seed.latitude,
+    longitude: seed.longitude,
+    estimatedMinPrice: seed.estimatedMinPrice,
+    estimatedMaxPrice: seed.estimatedMaxPrice,
+    technicianName: seed.technicianName,
+    technicianPhone: seed.technicianPhone,
+    technicianLatitude: seed.technicianLatitude,
+    technicianLongitude: seed.technicianLongitude,
+    locationUpdatedAt: seed.technicianName ? isoTimestamp(seed.historyHoursAgo[seed.historyHoursAgo.length - 1] ?? 0) : null,
+    trackingHistory: seed.historyStatuses.map((status, index) => ({
+      status,
+      statusLabel: bookingStatusLabels[status],
+      note: bookingStatusMessages[status],
+      createdAt: isoTimestamp(seed.historyHoursAgo[index]),
+    })),
+  }
+}
+
 // --- Requests ---
 
 export async function getMyBookings(): Promise<BookingListItem[]> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return demoBookings.map(demoListItem)
+  }
   const data = await getJson<BookingListApiShape[]>('/api/customer/bookings/')
   return data.map(mapBookingListItem)
 }
 
 export async function getBookingDetail(id: number): Promise<BookingDetail> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const seed = demoBookings.find((booking) => booking.id === id)
+    if (!seed) throw new BookingApiError('Booking not found.', { status: 404 })
+    return demoDetail(seed)
+  }
   const data = await getJson<BookingDetailApiShape>(`/api/customer/bookings/${id}/`)
   return mapBookingDetail(data)
 }
@@ -294,6 +514,50 @@ export interface CreateBookingPayload {
  *  builds FormData and deliberately never sets Content-Type itself, so the
  *  browser attaches the correct multipart boundary. */
 export async function createBooking(payload: CreateBookingPayload, images: File[]): Promise<BookingDetail> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const matchedService = demoServiceList.find((service) => service.id === payload.service)
+    const id = nextDemoId()
+    const seed: DemoBookingSeed = {
+      id,
+      bookingRef: `UCBK${id}`,
+      serviceSlug: payload.service,
+      serviceName: matchedService?.name ?? payload.service,
+      bookingDate: payload.bookingDate,
+      timeSlot: payload.bookingTime,
+      addressLine: payload.addressLine,
+      city: payload.city,
+      state: payload.state,
+      pincode: payload.pincode,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      estimatedMinPrice: matchedService?.startingPrice ?? 399,
+      estimatedMaxPrice: matchedService?.estimatedPriceTo ?? (matchedService?.startingPrice ?? 399) + 300,
+      complaint: payload.complaint,
+      status: 'pending',
+      technicianName: null,
+      technicianPhone: null,
+      technicianLatitude: null,
+      technicianLongitude: null,
+      historyHoursAgo: [0],
+      historyStatuses: ['pending'],
+    }
+    // New bookings first, same as a real "most-recently-created first" list.
+    demoBookings = [seed, ...demoBookings]
+    const detail = demoDetail(seed)
+    // Real File objects were actually chosen — preview them via object URLs
+    // rather than dropping them, so the success/detail view shows exactly
+    // what was just "uploaded" instead of an empty gallery. (Never revoked —
+    // a demo session is short-lived and this is the one place these files
+    // are ever shown.)
+    detail.images = images.map((file, index) => ({
+      id: index + 1,
+      imageUrl: URL.createObjectURL(file),
+      uploadedAt: new Date().toISOString(),
+    }))
+    return detail
+  }
+
   const formData = new FormData()
   formData.append('service', payload.service)
   formData.append('booking_date', payload.bookingDate)
@@ -423,6 +687,12 @@ function mapBookingTracking(data: BookingTrackingApiShape): BookingTracking {
 }
 
 export async function getBookingTracking(id: number): Promise<BookingTracking> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const seed = demoBookings.find((booking) => booking.id === id)
+    if (!seed) throw new BookingApiError('Booking not found.', { status: 404 })
+    return demoTracking(seed)
+  }
   const data = await getJson<BookingTrackingApiShape>(`/api/customer/bookings/${id}/tracking/`)
   return mapBookingTracking(data)
 }

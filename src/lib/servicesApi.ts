@@ -15,6 +15,8 @@
  * services too — see mapApiService below for the field-by-field mapping.
  */
 import type { Service } from '../data/services'
+import { services as demoServices } from '../data/services'
+import { DEMO_MODE, demoDelay } from './demoMode'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
@@ -106,6 +108,13 @@ async function getJson<T>(path: string): Promise<T> {
 /** GET /api/services/ — active services only, in admin-controlled display
  *  order. Used by ServicesPage to render one card per service. */
 export async function getServices(): Promise<Service[]> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    // The project's original 4 hardcoded services (data/services.ts) —
+    // already in exactly this shape, so no mapping needed. See that file's
+    // own header comment: this is precisely what it was kept around for.
+    return demoServices
+  }
   const data = await getJson<ServiceListApiShape[]>('/api/services/')
   return data.map(mapApiService)
 }
@@ -115,6 +124,12 @@ export async function getServices(): Promise<Service[]> {
  *  service_detail). Used by both ServiceDetailPage and BookingPage — the
  *  same "which service is this" lookup either page needs. */
 export async function getServiceDetail(slug: string): Promise<Service> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const found = demoServices.find((service) => service.id === slug)
+    if (!found) throw new ServicesApiError('Service not found.', 404)
+    return found
+  }
   const data = await getJson<ServiceDetailApiShape>(`/api/services/${slug}/`)
   return mapApiService(data)
 }

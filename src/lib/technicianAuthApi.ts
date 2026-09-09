@@ -1,4 +1,6 @@
 import { toE164 } from './indianPhone'
+import { logout as customerLogout } from './customerApi'
+import { DEMO_MODE, demoDelay } from './demoMode'
 
 /**
  * Technician OTP auth API — talks to the Django backend's session-based
@@ -112,6 +114,10 @@ export interface SendTechnicianOtpResult {
 }
 
 export async function sendTechnicianOtp(localNumber: string): Promise<SendTechnicianOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return { expiresIn: 300, resendAfter: 30, otpLength: 6 }
+  }
   // `phone`, not `mobile_number` — the backend view reuses the exact same
   // SendOtpSerializer every other OTP endpoint in this project does (see
   // backend/accounts/views.py's technician_send_otp), so the request body
@@ -175,7 +181,35 @@ function mapTechnicianProfile(data: TechnicianProfileApiShape): TechnicianProfil
   }
 }
 
+// Demo mode (see demoMode.ts) — self-contained module-level session, unlike
+// the customer side's demoSession.ts: every function that needs it (send/
+// verify-otp, get/update profile, logout below) already lives in this one
+// file, so there's no cross-file split to bridge.
+let demoTechnicianSession: TechnicianProfile | null = null
+
+const DEMO_TECHNICIAN_BASE: Omit<TechnicianProfile, 'mobileNumber'> = {
+  id: 501,
+  name: 'Arun Kumar',
+  email: 'arun.kumar@example.com',
+  profileImageUrl: null,
+  addressLine: '12, Chittoor Road',
+  city: 'Kochi',
+  state: 'Kerala',
+  pincode: '682018',
+  specialization: 'AC & Refrigeration',
+  experienceYears: 5,
+  isActive: true,
+}
+
 export async function verifyTechnicianOtp(localNumber: string, otp: string): Promise<TechnicianProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    // Same name/phone as the technician shown on the customer side's demo
+    // tracking page (see bookingApi.ts's DEMO_TECHNICIAN) — reads as the
+    // same person assigned to that booking, not two unrelated demos.
+    demoTechnicianSession = { ...DEMO_TECHNICIAN_BASE, mobileNumber: toE164(localNumber) }
+    return demoTechnicianSession
+  }
   const data = await request<{ technician: TechnicianProfileApiShape }>('POST', '/api/technician/auth/verify-otp/', {
     phone: toE164(localNumber),
     otp,
@@ -190,6 +224,13 @@ export async function verifyTechnicianOtp(localNumber: string, otp: string): Pro
  *  technician's," by design — see backend/accounts/views.py's
  *  technician_profile). */
 export async function getTechnicianProfile(): Promise<TechnicianProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    // No demo technician login has happened yet in this tab — mirrors a
+    // real 404 (see this function's own comment above on why 404 too).
+    if (!demoTechnicianSession) throw new TechnicianAuthApiError('Not authenticated.', { status: 404 })
+    return demoTechnicianSession
+  }
   return mapTechnicianProfile(await request<TechnicianProfileApiShape>('GET', '/api/technician/profile/'))
 }
 
@@ -208,6 +249,12 @@ export async function updateTechnicianProfile(patch: {
   pincode: string
   experienceYears: number
 }): Promise<TechnicianProfile> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    if (!demoTechnicianSession) throw new TechnicianAuthApiError('Not authenticated.', { status: 404 })
+    demoTechnicianSession = { ...demoTechnicianSession, ...patch }
+    return demoTechnicianSession
+  }
   const data = await request<TechnicianProfileApiShape>('PATCH', '/api/technician/profile/', {
     name: patch.name,
     email: patch.email,
@@ -226,6 +273,16 @@ export async function updateTechnicianProfile(patch: {
 // accounts/urls.py's POST /api/auth/logout/ already just ends whatever
 // session exists via Django's own logout(), regardless of whether it
 // belongs to a customer or a technician. lib/customerApi.ts's own logout()
-// hits the exact same endpoint; TechnicianAuthContext imports it directly
-// rather than duplicating this one-line wrapper a second time here.
-export { logout as logoutTechnician } from './customerApi'
+// hits the exact same endpoint, so this normally just forwards to it. Demo
+// mode is the one exception: customerApi.ts's own demo logout only clears
+// the *customer* session (see demoSession.ts), which would leave this
+// file's own demoTechnicianSession still "logged in" — so demo mode clears
+// that directly here instead of forwarding.
+export async function logoutTechnician(): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    demoTechnicianSession = null
+    return
+  }
+  await customerLogout()
+}

@@ -1,3 +1,5 @@
+import { DEMO_MODE, demoDelay } from './demoMode'
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export interface ContactFormPayload {
@@ -33,6 +35,10 @@ interface ApiErrorBody {
  * doesn't establish or rely on a session, so there's no cookie to send.
  */
 export async function submitContactMessage(payload: ContactFormPayload): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return
+  }
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}/api/contact/`, {

@@ -22,6 +22,8 @@
  * only ever touches this one file.
  */
 
+import { DEMO_MODE, demoDelay } from './demoMode'
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export class CustomerNotificationsApiError extends Error {
@@ -130,7 +132,54 @@ function mapNotification(data: CustomerNotificationApiShape): CustomerNotificati
   }
 }
 
+// Demo mode (see demoMode.ts) — references the same booking refs/ids as
+// bookingApi.ts's own demo bookings, so clicking through (including the
+// "View All Bookings"/booking-link navigation) reads as one consistent
+// story rather than two unrelated mock datasets.
+const demoNotifications: CustomerNotification[] = [
+  {
+    id: 1,
+    type: 'technician_assigned',
+    typeLabel: 'Technician Assigned',
+    title: 'Technician Assigned',
+    message: 'Arun Kumar has been assigned to your AC Service booking (UCBK1001).',
+    bookingId: 101,
+    bookingRef: 'UCBK1001',
+    isRead: false,
+    createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+  },
+  {
+    id: 2,
+    type: 'technician_on_the_way',
+    typeLabel: 'Technician On The Way',
+    title: 'Technician On The Way',
+    message: 'Your technician is on the way for booking UCBK1001.',
+    bookingId: 101,
+    bookingRef: 'UCBK1001',
+    isRead: false,
+    createdAt: new Date(Date.now() - 0.2 * 3_600_000).toISOString(),
+  },
+  {
+    id: 3,
+    type: 'service_completed',
+    typeLabel: 'Service Completed',
+    title: 'Service Completed',
+    message: 'Your Washing Machine service (UCBK1002) has been completed.',
+    bookingId: 102,
+    bookingRef: 'UCBK1002',
+    isRead: true,
+    createdAt: new Date(Date.now() - 144 * 3_600_000).toISOString(),
+  },
+]
+
 export async function getCustomerNotifications(): Promise<CustomerNotificationsResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return {
+      unreadCount: demoNotifications.filter((notification) => !notification.isRead).length,
+      results: demoNotifications,
+    }
+  }
   const data = await request<CustomerNotificationsApiShape>('GET', '/api/customer/notifications/')
   return {
     unreadCount: data.unread_count,
@@ -141,6 +190,13 @@ export async function getCustomerNotifications(): Promise<CustomerNotificationsR
 /** Marks one notification read — called when the customer clicks it (before
  *  navigating to its booking, if it has one). */
 export async function markCustomerNotificationRead(id: number): Promise<CustomerNotification> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const notification = demoNotifications.find((item) => item.id === id)
+    if (!notification) throw new CustomerNotificationsApiError('Notification not found.', 404)
+    notification.isRead = true
+    return notification
+  }
   const data = await request<CustomerNotificationApiShape>('PATCH', `/api/customer/notifications/${id}/read/`)
   return mapNotification(data)
 }
@@ -148,5 +204,10 @@ export async function markCustomerNotificationRead(id: number): Promise<Customer
 /** Marks every one of this customer's unread notifications as read — called
  *  from the panel's own "Mark all as read" button. */
 export async function markAllCustomerNotificationsRead(): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    for (const notification of demoNotifications) notification.isRead = true
+    return
+  }
   await request<{ detail: string }>('POST', '/api/customer/notifications/mark-all-read/')
 }

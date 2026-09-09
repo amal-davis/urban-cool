@@ -12,6 +12,8 @@
  * the technician header's bell button.
  */
 
+import { DEMO_MODE, demoDelay } from './demoMode'
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export class TechnicianNotificationsApiError extends Error {
@@ -104,7 +106,47 @@ function mapNotification(data: TechnicianNotificationApiShape): TechnicianNotifi
   }
 }
 
+// Demo mode (see demoMode.ts) — references the same booking refs as
+// technicianJobsApi.ts's own demo jobs, so clicking through reads as one
+// consistent story rather than two unrelated mock datasets.
+const demoNotifications: TechnicianNotification[] = [
+  {
+    id: 1,
+    type: 'assigned',
+    typeLabel: 'New Job Assigned',
+    message: 'You have been assigned a new AC Service job (UCBK2001).',
+    bookingRef: 'UCBK2001',
+    isRead: false,
+    createdAt: new Date(Date.now() - 4 * 3_600_000).toISOString(),
+  },
+  {
+    id: 2,
+    type: 'status_update',
+    typeLabel: 'Job Status Updated',
+    message: 'Booking UCBK2001 moved to In Progress.',
+    bookingRef: 'UCBK2001',
+    isRead: false,
+    createdAt: new Date(Date.now() - 0.3 * 3_600_000).toISOString(),
+  },
+  {
+    id: 3,
+    type: 'commission_updated',
+    typeLabel: 'Commission Updated',
+    message: 'A ₹150 commission was set for booking UCBK2005.',
+    bookingRef: 'UCBK2005',
+    isRead: true,
+    createdAt: new Date(Date.now() - 120 * 3_600_000).toISOString(),
+  },
+]
+
 export async function getTechnicianNotifications(): Promise<TechnicianNotificationsResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return {
+      unreadCount: demoNotifications.filter((notification) => !notification.isRead).length,
+      results: demoNotifications,
+    }
+  }
   const data = await request<TechnicianNotificationsApiShape>('GET', '/api/technician/notifications/')
   return {
     unreadCount: data.unread_count,
@@ -116,5 +158,10 @@ export async function getTechnicianNotifications(): Promise<TechnicianNotificati
  *  just the ones currently shown) — called when the panel is opened, to
  *  clear the bell's badge. */
 export async function markTechnicianNotificationsRead(): Promise<void> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    for (const notification of demoNotifications) notification.isRead = true
+    return
+  }
   await request<{ detail: string }>('POST', '/api/technician/notifications/mark-read/')
 }

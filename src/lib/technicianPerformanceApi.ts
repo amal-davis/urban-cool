@@ -13,7 +13,19 @@
  * mean fabricating a number nothing backs.
  */
 
+import { DEMO_MODE, demoDelay } from './demoMode'
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+
+// Demo mode (see demoMode.ts) — plausible static figures, same reasoning as
+// technicianEarningsApi.ts's own DEMO_EARNINGS.
+const DEMO_PERFORMANCE = {
+  totalJobs: 42,
+  completedJobs: 38,
+  cancelledJobs: 2,
+  completionRate: 90,
+  avgResponseTimeMinutes: 18,
+}
 
 export class TechnicianPerformanceApiError extends Error {
   status?: number
@@ -57,6 +69,10 @@ function mapPerformance(data: TechnicianPerformanceApiShape): TechnicianPerforma
 }
 
 export async function getTechnicianPerformance(): Promise<TechnicianPerformance> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return DEMO_PERFORMANCE
+  }
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}/api/technician/performance/`, { method: 'GET', credentials: 'include' })

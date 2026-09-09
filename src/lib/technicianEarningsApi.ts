@@ -15,7 +15,22 @@
  * all, see the backend view's own comment.
  */
 
+import { DEMO_MODE, demoDelay } from './demoMode'
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+
+// Demo mode (see demoMode.ts) — plausible static figures roughly consistent
+// with technicianJobsApi.ts's own demo jobs (one completed, priced job
+// there carries a ₹150 commission), not derived from them: this file's own
+// established convention is a small local copy, not cross-module state.
+const DEMO_EARNINGS = {
+  totalCommissionEarned: 8400,
+  monthCommissionEarned: 2100,
+  totalServiceValue: 42000,
+  commissionRate: 20,
+  pendingPayout: 1200,
+  paidAmount: 7200,
+}
 
 export class TechnicianEarningsApiError extends Error {
   status?: number
@@ -62,6 +77,10 @@ function mapEarnings(data: TechnicianEarningsApiShape): TechnicianEarnings {
 }
 
 export async function getTechnicianEarnings(): Promise<TechnicianEarnings> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return DEMO_EARNINGS
+  }
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}/api/technician/earnings/`, { method: 'GET', credentials: 'include' })

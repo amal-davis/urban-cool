@@ -1,4 +1,6 @@
 import { toE164 } from './indianPhone'
+import { DEMO_MODE, demoDelay } from './demoMode'
+import { setDemoCustomerSession } from './demoSession'
 
 /**
  * OTP auth API — talks to the Django backend's session-based auth (see
@@ -85,7 +87,18 @@ export interface VerifyOtpResult {
   phone: string
 }
 
+// Demo mode (see demoMode.ts) accepts any phone number/OTP unconditionally —
+// there's no real SMS provider behind this build, so the usual "type the
+// code you were sent" step would otherwise be a dead end. `otpLength: 6`
+// matches DEFAULT_OTP_LENGTH in LoginCard.tsx/SignupCard.tsx, so the OTP
+// step still renders its normal 6-box input.
+const DEMO_OTP_RESULT = { expiresIn: 300, resendAfter: 30, otpLength: 6 }
+
 export async function sendOtp(localNumber: string): Promise<SendOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return DEMO_OTP_RESULT
+  }
   const data = await postJson<{ expires_in: number; resend_after: number; otp_length: number }>(
     '/api/auth/send-otp/',
     { phone: toE164(localNumber) },
@@ -94,6 +107,20 @@ export async function sendOtp(localNumber: string): Promise<SendOtpResult> {
 }
 
 export async function verifyOtp(localNumber: string, otp: string): Promise<VerifyOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const phone = toE164(localNumber)
+    // Seeds a believable profile from the number just entered — the next
+    // getProfile() call (customerApi.ts) picks this straight up, same as a
+    // real login would resolve to the account behind that number.
+    setDemoCustomerSession({
+      name: 'Demo Customer',
+      email: 'demo.customer@example.com',
+      mobileNumber: phone,
+      memberSince: new Date().toISOString(),
+    })
+    return { phone }
+  }
   const data = await postJson<{ user: { phone: string } }>('/api/auth/verify-otp/', {
     phone: toE164(localNumber),
     otp,
@@ -116,6 +143,10 @@ export interface SignupSendOtpResult {
 }
 
 export async function signupSendOtp(localNumber: string): Promise<SignupSendOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    return DEMO_OTP_RESULT
+  }
   const data = await postJson<{ expires_in: number; resend_after: number; otp_length: number }>(
     '/api/auth/signup/send-otp/',
     { phone: toE164(localNumber) },
@@ -132,6 +163,16 @@ export interface SignupVerifyOtpResult {
 }
 
 export async function verifySignupOtp(localNumber: string, otp: string): Promise<SignupVerifyOtpResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const phone = toE164(localNumber)
+    // Encodes the phone directly into the fake token — createAccount below
+    // only ever receives this token back, never the phone itself (mirrors
+    // the real backend's own "derive the number from the token" contract,
+    // see that function's own comment), so this is the one place demo mode
+    // has to smuggle it through.
+    return { phone, verificationToken: `demo:${phone}` }
+  }
   const data = await postJson<{ phone: string; verification_token: string }>('/api/auth/signup/verify-otp/', {
     phone: toE164(localNumber),
     otp,
@@ -150,6 +191,12 @@ export async function createAccount(
   fullName: string,
   email: string,
 ): Promise<CreateAccountResult> {
+  if (DEMO_MODE) {
+    await demoDelay()
+    const phone = verificationToken.startsWith('demo:') ? verificationToken.slice('demo:'.length) : ''
+    setDemoCustomerSession({ name: fullName, email, mobileNumber: phone, memberSince: new Date().toISOString() })
+    return { phone, fullName, email }
+  }
   // No phone field here by design — the backend derives the verified number
   // from verificationToken alone (see CreateAccountSerializer), so this
   // request can't claim a number other than the one that was actually
