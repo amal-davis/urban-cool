@@ -242,6 +242,27 @@ OTP_MAX_ATTEMPTS = int(os.environ.get('OTP_MAX_ATTEMPTS', '5'))
 SIGNUP_TOKEN_TTL_SECONDS = int(os.environ.get('SIGNUP_TOKEN_TTL_SECONDS', '600'))
 
 
+# Email — notification emails (booking confirmations, technician <-> customer
+# status updates, admin/technician alerts; see bookings/notifications.py,
+# wired up via TechnicianNotification/CustomerNotification's post_save
+# signals in bookings/apps.py) send through Gmail SMTP using an app
+# password, not a real account password — see .env.example for how to
+# generate one. Falls back to Django's console backend (prints the email to
+# the runserver terminal instead of actually sending it) whenever
+# EMAIL_HOST_USER isn't set, so a fresh checkout/CI run never needs real
+# credentials just to create a booking.
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = f'Urban Cool <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'webmaster@localhost'
+
+
 # django-unfold — admin theme
 # https://unfoldadmin.com/docs/configuration/settings/
 #
