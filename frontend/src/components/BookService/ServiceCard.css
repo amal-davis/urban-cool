@@ -73,9 +73,13 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  /* Stays clear of the illustration bleeding in from the right —
-     see .service-card__illustration below. */
-  max-width: 64%;
+  /* Stays clear of the illustration bleeding in from the right — see
+     .service-card__illustration below. Tightened from 64%: that was sized
+     against the old, smaller SVG-icon illustration and never re-checked
+     after the illustration became a real product photo at up to 116px/24vw
+     wide — real measurement at 375-430px showed the two boxes genuinely
+     overlapping by 30-40px, not just crowding visually. */
+  max-width: 54%;
 }
 
 .service-card__name {
@@ -129,8 +133,8 @@
      both hugged the same corner. */
   top: 50%;
   transform: translateY(-50%);
-  width: clamp(76px, 24vw, 116px);
-  height: clamp(76px, 24vw, 116px);
+  width: clamp(64px, 19vw, 108px);
+  height: clamp(64px, 19vw, 108px);
   object-fit: contain;
   pointer-events: none;
 }
