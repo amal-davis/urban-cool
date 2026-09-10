@@ -1,0 +1,206 @@
+.hero {
+  background: var(--color-bg);
+  /* Asymmetric on purpose: top stays as before (space below the navbar),
+     bottom is trimmed down — that's the half of this section's padding that
+     actually adds to the gap above Our Services, and Book a Service's own
+     top padding (see BookServiceSection.css) contributes the rest. */
+  padding-block: clamp(var(--space-lg), 4vw, var(--space-xl)) clamp(var(--space-xs), 1.5vw, var(--space-sm));
+}
+
+/* The visible single-slide "window". Owl's own overflow:hidden lives here
+   (from owl.carousel.css) — putting the panel's radius on this element,
+   rather than on .owl-carousel or .hero-slide, means it clips to exactly
+   the rounded shape as slides translate underneath it. Scoped to our own
+   track class rather than bare `.owl-stage-outer` so this doesn't leak onto
+   any other Owl instance the project might add later. No background of its
+   own now — each .hero-slide carries its own full-bleed photo underneath
+   the scrim (see below), so there's nothing showing through to give one. */
+.hero-carousel__track .owl-stage-outer {
+  border-radius: var(--radius-lg);
+}
+
+/* Owl sizes the stage to the tallest item regardless of which one is
+   currently visible (they're all floated in the same row) — deliberately
+   not using Owl's `autoHeight` option; it's a common source of the "Cannot
+   read properties of null/undefined" class of Owl errors when a slide's
+   real height briefly measures as 0 mid-transition.
+   `height`, not `min-height`: the 4 slides' headings wrap to a different
+   number of lines from each other (2 lines for "Comfort at / Your
+   Doorstep", up to 4 for the longer ones at narrow widths) — with
+   min-height, each slide's box grew to fit its own content instead of
+   sharing one height, which is exactly the unevenness this fixes. A fixed
+   height + `align-items: center` on the content column means shorter
+   content is centered with extra breathing room instead of stretching the
+   slide, and taller content still fits (verified against the longest
+   heading's worst-case wrap) rather than clipping. */
+.hero-slide {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* Fluid, not a breakpoint jump — this is what keeps the composition (photo
+     background, left-aligned overlay content) identical on desktop and
+     mobile, per the brief: only scale changes, not layout. */
+  height: clamp(400px, 46vw, 540px);
+  padding: clamp(var(--space-lg), 5vw, var(--space-2xl));
+}
+
+.hero-slide__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Fades from a near-opaque Paper wash on the left (where the heading/CTA
+   sit) to fully transparent on the right (where the photo itself carries
+   the frame) — a light scrim, not a dark one, since the overlay text is
+   Ink/Signal-Blue-Deep, not white. Percentage-based stops (not fixed px)
+   are what let this same gradient hold its proportions at every viewport
+   width without a breakpoint override. */
+.hero-slide__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklch, var(--color-bg) 97%, transparent) 0%,
+    color-mix(in oklch, var(--color-bg) 92%, transparent) 40%,
+    color-mix(in oklch, var(--color-bg) 55%, transparent) 62%,
+    transparent 85%
+  );
+}
+
+.hero-slide__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: clamp(4px, 1vw, var(--space-xs));
+  max-width: clamp(240px, 44vw, 460px);
+}
+
+.hero-slide__eyebrow {
+  font-family: var(--font-sans);
+  font-size: clamp(0.6875rem, 0.6rem + 0.5vw, var(--text-label-size));
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary-deep);
+  margin: 0 0 clamp(2px, 0.8vw, var(--space-xs));
+}
+
+.hero-slide__heading {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(1.625rem, 1rem + 4.5vw, var(--text-display-size));
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  margin: 0 0 clamp(4px, 1vw, var(--space-sm));
+}
+.hero-slide__heading-line {
+  display: block;
+}
+.hero-slide__heading-line--accent {
+  color: var(--color-primary-deep);
+}
+
+.hero-slide__description {
+  font-size: clamp(0.75rem, 0.6rem + 0.9vw, var(--text-body-size));
+  line-height: 1.5;
+  color: var(--color-muted);
+  max-width: 38ch;
+  margin: 0 0 clamp(var(--space-xs), 2vw, var(--space-sm));
+}
+
+.hero-slide__cta {
+  /* Rounder than the sitewide .btn default (--radius-md) — a scoped
+     override for this one hero CTA, same approach FinalCTA/MembershipBanner
+     already use for their own one-off button treatments rather than adding
+     a new global .btn variant for a single usage. */
+  border-radius: var(--radius-lg);
+  font-size: clamp(0.875rem, 0.75rem + 0.6vw, 1.0625rem);
+  padding: clamp(0.625rem, 1.2vw, 0.875rem) clamp(var(--space-md), 3vw, 1.75rem);
+}
+.hero-slide__cta-icon {
+  width: clamp(16px, 2.4vw, 20px);
+  height: clamp(16px, 2.4vw, 20px);
+}
+
+.hero-slide__trust {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(var(--space-sm), 2vw, var(--space-md));
+  margin-top: clamp(var(--space-sm), 2vw, var(--space-md));
+}
+.hero-trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(0.6875rem, 0.6rem + 0.4vw, var(--text-label-size));
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+.hero-trust-item svg {
+  width: clamp(14px, 2.2vw, 18px);
+  height: clamp(14px, 2.2vw, 18px);
+  color: var(--color-primary-deep);
+  flex-shrink: 0;
+}
+.hero-trust-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* Owl-generated pagination dots — the only nav control (arrows were never
+   enabled: `nav: false` in HeroCarousel.tsx; swipe/drag and autoplay
+   remain). Rendered by Owl as a sibling of .owl-stage-outer, i.e. already
+   immediately below the rounded slide card, inside the same .container.
+   Structural rules (positioning, `owl-loaded` visibility toggle) come from
+   owl.carousel.css; everything about how dots look is defined here per
+   DESIGN.md — no default Owl theme is loaded. */
+.owl-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+}
+.owl-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+.owl-dot span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  transition: background-color 200ms ease, width 200ms ease;
+}
+.owl-dot:hover span {
+  background: var(--color-muted);
+}
+.owl-dot.active span {
+  width: 24px;
+  background: var(--color-primary-deep);
+}
+.owl-dot:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+  border-radius: var(--radius-full);
+}

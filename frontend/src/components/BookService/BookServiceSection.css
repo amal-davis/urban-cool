@@ -1,0 +1,68 @@
+.book-service {
+  background: var(--color-bg);
+  /* Fluid rather than a breakpoint override — same "same layout, different
+     scale" approach as MembershipBanner.css, so this section's rhythm
+     scales continuously alongside the cards below it instead of jumping.
+     Asymmetric: bottom is unchanged (rhythm into ServiceHighlights/
+     Membership below), top is trimmed — paired with Hero's own reduced
+     bottom padding (HeroCarousel.css) to close the gap above this section
+     without touching spacing anywhere else. */
+  padding-block: clamp(var(--space-xs), 1.5vw, var(--space-sm)) clamp(var(--space-xl), 6vw, var(--space-2xl));
+}
+
+.book-service__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: clamp(var(--space-md), 3vw, var(--space-lg));
+}
+
+.book-service__heading {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  /* Fluid between two *existing* tokens (Title/Headline from DESIGN.md),
+     not a new size — compact on small screens, full headline scale from
+     tablet up. */
+  font-size: clamp(var(--text-title-size), 4vw, var(--text-headline-size));
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.book-service__view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: clamp(var(--text-label-size), 2.4vw, var(--text-body-size));
+  font-weight: 600;
+  color: var(--color-primary-deep);
+  text-decoration: none;
+}
+.book-service__view-all:hover {
+  text-decoration: underline;
+}
+.book-service__view-all:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+.book-service__view-all-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.book-service__grid {
+  display: grid;
+  /* Always 2 columns, at every width — the reference design is the same
+     2x2 composition on desktop and mobile, just scaled (see ServiceCard.css
+     for the fluid per-card sizing that does the actual scaling). Previously
+     this was 4-across above 900px; the richer tile content (badge + name +
+     description + illustration) needs more width per card than the old
+     icon-only tiles did, so 2 columns reads better at every size, not just
+     on phones. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(var(--space-sm), 3vw, var(--space-lg));
+}

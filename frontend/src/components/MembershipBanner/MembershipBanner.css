@@ -1,0 +1,249 @@
+/*
+ * Responsive strategy for this component: "same layout, different scale."
+ * The two-column grid (left content / right image) never collapses to a
+ * single column and never re-centers or reorders at any width — every
+ * property that needs to shrink on small screens does so continuously via
+ * clamp()/vw against the same base values used at desktop, instead of
+ * jumping to a different arrangement at a breakpoint. There are
+ * deliberately no `@media` rules in this file for that reason: nothing
+ * about the *structure* changes between 375px and 1440px, only scale.
+ */
+
+.membership-banner {
+  background: var(--color-bg);
+  /* No top padding: Book a Service directly above already ends in its own
+     bottom padding, so stacking another one here would double the gap.
+     Fluid so the rhythm this creates against whatever follows scales down
+     on small screens the same way everything inside the card does. */
+  padding-block: 0 clamp(var(--space-xl), 6vw, var(--space-2xl));
+}
+
+.membership-banner__card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  /* Same recipe FinalCTA uses for the site's other full-color band: an
+     existing token (--color-primary-deep) pushed toward --color-primary via
+     color-mix, not a new hue. Kept deliberately subtle (no --color-primary
+     directly) since --color-primary-deep is what the Large-Text Contrast
+     Note requires under white text at this size. */
+  background: radial-gradient(
+    ellipse 700px 420px at 88% -12%,
+    color-mix(in oklch, var(--color-primary-deep) 55%, var(--color-primary)) 0%,
+    var(--color-primary-deep) 65%
+  );
+  padding: clamp(var(--space-md), 4vw, var(--space-xl));
+}
+
+/* Subtle decorative shapes only — clipped by the card's own border-radius
+   via the parent's overflow:hidden, no information carried here. */
+.membership-banner__shape {
+  position: absolute;
+  border-radius: 50%;
+  background: color-mix(in oklch, white 10%, transparent);
+  pointer-events: none;
+}
+.membership-banner__shape--one {
+  width: 320px;
+  height: 320px;
+  top: -160px;
+  right: -80px;
+}
+.membership-banner__shape--two {
+  width: 200px;
+  height: 200px;
+  bottom: -120px;
+  left: 8%;
+  background: color-mix(in oklch, white 6%, transparent);
+}
+
+.membership-banner__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* Fixed two-column ratio at every width — this is what keeps the image
+     beside the content instead of below it all the way down to 375px. The
+     right column's 64px floor stops it collapsing toward zero on the
+     narrowest phones; above ~380px the fr share already clears that floor
+     on its own, so this is a safety net, not the normal operating point. */
+  grid-template-columns: minmax(0, 1.85fr) minmax(64px, 1fr);
+  grid-template-areas:
+    'intro visual'
+    'details visual';
+  align-items: center;
+  column-gap: clamp(var(--space-sm), 4vw, var(--space-xl));
+  row-gap: clamp(var(--space-sm), 2vw, var(--space-md));
+}
+
+.membership-banner__intro {
+  grid-area: intro;
+}
+
+.membership-banner__eyebrow {
+  font-family: var(--font-sans);
+  font-size: clamp(0.6875rem, 0.58rem + 0.4vw, var(--text-label-size));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, white 78%, transparent);
+  margin: 0 0 var(--space-xs);
+}
+
+.membership-banner__heading {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  /* Deliberately not --text-display-size: Display is reserved for one
+     page-level headline (already spent on HeroCarousel — see DESIGN.md
+     "used once per screen, if at all"). This clamp already scales the
+     heading from 44px down to 32px on its own (a ~73% floor, in line with
+     the "mobile ~65-75% of desktop" scale target) — no breakpoint needed. */
+  font-size: clamp(2rem, 1.3rem + 3vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0 0 var(--space-xs);
+}
+
+.membership-banner__tagline {
+  font-size: clamp(0.8125rem, 0.68rem + 0.6vw, var(--text-body-size));
+  font-weight: 500;
+  color: color-mix(in oklch, white 88%, transparent);
+  margin: 0;
+}
+
+.membership-banner__visual {
+  grid-area: visual;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.membership-banner__card-visual {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: clamp(var(--space-xs), 2vw, var(--space-md));
+  /* Constant at every width — the brief calls for the same tilt at every
+     size, not a flatter one on small screens. */
+  transform: rotate(-6deg);
+  /* A bespoke photographic drop-shadow for this one tilted, floating
+     illustration — not --shadow-float, which stays reserved for UI layers
+     (modals/dropdowns/toasts) per the Flat-by-Default Rule. This card isn't
+     UI chrome, it's the section's illustration, styled to look physically
+     tilted and lifted the way the reference does. */
+  filter: drop-shadow(0 16px 28px rgba(3, 10, 20, 0.35));
+}
+
+.membership-banner__image {
+  display: block;
+  /* Flat 160px above ~730px viewport width (unchanged from the previous
+     fixed value — desktop stays as-is), scaling fluidly down to an 88px
+     floor on the narrowest phones rather than snapping between two sizes. */
+  width: clamp(88px, 22vw, 160px);
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.membership-banner__details {
+  grid-area: details;
+  display: flex;
+  flex-direction: column;
+  /* flex-start, not stretch: the CTA link below must stay shrink-wrapped
+     and left-aligned, not stretch full-width into a block button. The
+     benefits row is the one child that needs the full column width — it
+     opts back in with its own explicit width:100% below. */
+  align-items: flex-start;
+  gap: clamp(var(--space-sm), 3vw, var(--space-lg));
+}
+
+.membership-banner__benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  /* wrap stays as a last-resort safety valve, not the mobile layout: three
+     icon+label pairs each have an irreducible minimum width (short as
+     "Discounts"/"Reminders" are, they don't compress past ~11px type), and
+     at the narrowest tested widths (375-414px) that minimum genuinely
+     exceeds the left column's available width even at the floor sizes
+     below. When that happens this wraps the row to two lines rather than
+     overflowing or forcing illegible text — each item still stays
+     icon-beside-label (see .membership-benefit) and left-aligned, so the
+     composition itself isn't changing, just how many fit per line. */
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: space-between;
+  gap: clamp(var(--space-xs), 3vw, var(--space-lg));
+}
+
+.membership-benefit {
+  display: flex;
+  /* Always row — icon beside label, same as desktop, at every width. */
+  align-items: center;
+  gap: clamp(3px, 1.2vw, var(--space-sm));
+}
+
+.membership-benefit__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(22px, 6vw, 38px);
+  height: clamp(22px, 6vw, 38px);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, white 16%, transparent);
+  color: #fff;
+}
+.membership-benefit__icon svg {
+  width: clamp(13px, 3.2vw, 20px);
+  height: clamp(13px, 3.2vw, 20px);
+}
+
+.membership-benefit__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.membership-benefit__title {
+  font-size: clamp(0.625rem, 0.52rem + 0.4vw, var(--text-label-size));
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.membership-benefit__subtitle {
+  font-size: clamp(0.625rem, 0.52rem + 0.4vw, var(--text-label-size));
+  font-weight: 500;
+  color: color-mix(in oklch, white 80%, transparent);
+  white-space: nowrap;
+}
+
+/* Scoped override on the shared .btn — same approach FinalCTA already uses
+   for its own dark-background button (.final-cta .btn--ghost): a white
+   pill CTA on a dark fill is this section's own need, not a case seen
+   anywhere else yet, so it isn't promoted to a new global .btn variant. */
+.membership-banner__cta {
+  background: #fff;
+  color: var(--color-ink);
+  border-radius: var(--radius-full);
+  padding-inline: clamp(var(--space-md), 4vw, var(--space-lg));
+  font-size: clamp(0.8125rem, 0.65rem + 0.8vw, var(--text-body-size));
+  /* Vertical padding is deliberately NOT scaled down — it's inherited
+     as-is from .btn's own padding-block. Shrinking it further to match the
+     horizontal scale would push the tap target under the 44px minimum
+     DESIGN.md requires for interactive elements, and this button is one of
+     them regardless of screen size. */
+  align-self: flex-start;
+}
+.membership-banner__cta:hover:not(:disabled) {
+  background: var(--color-surface);
+}
+.membership-banner__cta:active:not(:disabled) {
+  background: var(--color-border);
+}
+.membership-banner__cta-icon {
+  width: clamp(14px, 3vw, 18px);
+  height: clamp(14px, 3vw, 18px);
+}

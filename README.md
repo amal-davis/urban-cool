@@ -1,32 +1,67 @@
-# React + TypeScript + Vite
+# urban-cool
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A service-booking platform for home appliance repair — AC, refrigerator, washing machine, and microwave. Customers book a technician; ops assigns and tracks the job. See [PRODUCT.md](./PRODUCT.md) and [DESIGN.md](./DESIGN.md) for the product and visual system.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **`frontend/`** — React + TypeScript, built with Vite.
+- **`backend/`** — Django + Django REST Framework, serving a JSON API.
 
-## React Compiler
+The two run as separate dev servers during development (frontend on `:5173`, backend on `:8000`) and talk over CORS.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## First-time setup
 
-## Expanding the Oxlint configuration
+### Backend
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cd backend
+python -m venv .venv
+source .venv/Scripts/activate      # Windows Git Bash; use .venv\Scripts\activate.bat on cmd.exe
+pip install -r requirements.txt
+cp .env.example .env               # then fill in DJANGO_SECRET_KEY etc.
+python manage.py migrate
+python manage.py createsuperuser   # optional, for /admin/
+python manage.py runserver
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+API is now at `http://localhost:8000/api/`. Try `http://localhost:8000/api/health/`.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env               # VITE_API_URL, defaults to http://localhost:8000
+npm run dev
+```
+
+App is now at `http://localhost:5173`. It calls the backend health-check endpoint on load so you can confirm the two sides are wired together.
+
+## Running both
+
+Open two terminals — one in `backend/` (`python manage.py runserver`), one in `frontend/` (`npm run dev`).
+
+## Project structure
+
+```
+urban-cool/
+├── PRODUCT.md          # strategy: users, purpose, brand personality, register
+├── DESIGN.md            # visual system: colors, typography, components
+├── frontend/             # React + Vite + TypeScript
+│   └── src/
+│       ├── styles/tokens.css   # CSS custom properties mirroring DESIGN.md
+│       ├── App.tsx
+│       └── main.tsx
+└── backend/              # Django + DRF
+    ├── config/            # settings, root urls
+    ├── bookings/           # first Django app (booking domain lives here)
+    └── manage.py
+```
+
+## Next step
+
+The scaffold above proves the two sides talk to each other — no product UI exists yet. Build the booking flow with:
+
+```
+/impeccable craft booking flow
+```

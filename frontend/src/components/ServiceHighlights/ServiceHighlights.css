@@ -1,0 +1,72 @@
+.service-highlights {
+  background: var(--color-bg);
+  /* Fluid, not a fixed value — same "same layout, different scale" approach
+     used throughout the rest of the homepage now (Membership banner, Book a
+     Service): nothing here should need a breakpoint to look right. */
+  padding-block: clamp(var(--space-lg), 4vw, var(--space-xl));
+}
+
+.service-highlights__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  /* Always one row, at every width — the brief calls for the identical
+     composition on desktop and mobile. Previously this wrapped into a
+     2-column grid below 600px; each item's own title/subtitle text wraps
+     internally instead now (see .highlight below), which keeps three items
+     side by side without needing a different arrangement on phones. */
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: clamp(var(--space-sm), 3vw, var(--space-2xl));
+}
+
+.highlight {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1.6vw, var(--space-sm));
+  min-width: 0;
+}
+
+.highlight__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(24px, 6.5vw, 44px);
+  height: clamp(24px, 6.5vw, 44px);
+  border-radius: var(--radius-full);
+  /* -deep, not the base --color-primary: white-icon-on-fill needs the
+     6.91:1 contrast pair per DESIGN.md's Large-Text Contrast Note, same
+     rule every solid-fill button on the site already follows. */
+  background: var(--color-primary-deep);
+  color: #fff;
+}
+.highlight__icon svg {
+  width: 55%;
+  height: 55%;
+}
+
+.highlight__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+/* Floors lowered from 12px/10px — the previous ones still read as "large"
+   on a narrow phone (title text wrapping to 2 lines, subtitle to 3), which
+   is the mobile-text-size complaint this was tuned against. Desktop is
+   untouched: at ≥~560px width these clamps are already past the floor,
+   riding the same fluid/ceiling values as before. */
+.highlight__title {
+  font-size: clamp(0.6875rem, 0.56rem + 0.8vw, var(--text-body-size));
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.highlight__subtitle {
+  font-size: clamp(0.5625rem, 0.5rem + 0.4vw, var(--text-label-size));
+  color: var(--color-muted);
+}
