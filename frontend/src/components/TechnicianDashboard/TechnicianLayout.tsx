@@ -7,6 +7,13 @@ import './TechnicianLayout.css'
 
 interface TechnicianLayoutProps {
   children: ReactNode
+  /** Passed straight through to TechnicianHeader — see that component's own
+   *  prop doc comment. Only TechnicianDashboardPage sets this. */
+  hideHeaderGreetingOnMobile?: boolean
+  /** Passed straight through to TechnicianSidebar — see that component's
+   *  own prop doc comment. Only TechnicianDashboardPage sets this, and only
+   *  while its mobile home is the layout on screen. */
+  sidebarSectionTargets?: Record<string, string>
 }
 
 /**
@@ -28,15 +35,23 @@ interface TechnicianLayoutProps {
  * NotificationBell. Sidebar/header themselves stay outside it deliberately
  * — they're what a technician needs to navigate away from whatever broke.
  */
-export function TechnicianLayout({ children }: TechnicianLayoutProps) {
+export function TechnicianLayout({
+  children,
+  hideHeaderGreetingOnMobile,
+  sidebarSectionTargets,
+}: TechnicianLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="tech-layout">
-      <TechnicianSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <TechnicianSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        sectionTargets={sidebarSectionTargets}
+      />
 
       <div className="tech-layout__main">
-        <TechnicianHeader onOpenSidebar={() => setSidebarOpen(true)} />
+        <TechnicianHeader onOpenSidebar={() => setSidebarOpen(true)} hideGreetingOnMobile={hideHeaderGreetingOnMobile} />
         <main className="tech-layout__content">
           <ErrorBoundary
             fallback={

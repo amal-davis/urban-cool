@@ -380,3 +380,14 @@ export function RupeeIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+/** Technician mobile home — Quick Actions' "Service Report". */
+export function DocumentIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6.5 3.75h8l4 4v11.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4.75a1 1 0 0 1 1-1z" />
+      <path d="M14.5 3.75v4h4" />
+      <path d="M8.5 12.5h7M8.5 15.5h7M8.5 18h4.5" />
+    </svg>
+  )
+}

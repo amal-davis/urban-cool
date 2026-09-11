@@ -5,17 +5,18 @@ import { NotificationBell } from './NotificationBell'
 import { ErrorBoundary } from '../ErrorBoundary/ErrorBoundary'
 import { useTechnicianAuth } from '../../lib/TechnicianAuthContext'
 import { initialsFor } from '../../lib/initials'
+import { timeOfDayGreeting } from '../../lib/greeting'
 import './TechnicianHeader.css'
 
 interface TechnicianHeaderProps {
   onOpenSidebar: () => void
-}
-
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good Morning'
-  if (hour < 17) return 'Good Afternoon'
-  return 'Good Evening'
+  /** Dashboard-only: below 1024px that page renders its own mobile home
+   *  view (see MobileTechnicianHome.tsx), which opens with its own
+   *  greeting banner — showing "Good Morning, Arun" a second time right
+   *  here would be redundant. Every other /technician/* page leaves this
+   *  unset, so the greeting keeps showing at every width like it always
+   *  has (see TechnicianLayout.tsx's own doc comment on this prop). */
+  hideGreetingOnMobile?: boolean
 }
 
 /**
@@ -27,7 +28,7 @@ function greeting(): string {
  * this project's own TechnicianProfile model), and it was part of what
  * made this bar crowd out on narrow phone screens.)
  */
-export function TechnicianHeader({ onOpenSidebar }: TechnicianHeaderProps) {
+export function TechnicianHeader({ onOpenSidebar, hideGreetingOnMobile }: TechnicianHeaderProps) {
   const { technician, logout } = useTechnicianAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -63,7 +64,7 @@ export function TechnicianHeader({ onOpenSidebar }: TechnicianHeaderProps) {
   if (!technician) return null
 
   return (
-    <header className="tech-header">
+    <header className={`tech-header${hideGreetingOnMobile ? ' tech-header--hide-greeting-mobile' : ''}`}>
       <div className="tech-header__start">
         <button
           type="button"
@@ -76,7 +77,7 @@ export function TechnicianHeader({ onOpenSidebar }: TechnicianHeaderProps) {
         </button>
         <div className="tech-header__greeting">
           <h1 className="tech-header__heading">
-            {greeting()}, {technician.name.split(' ')[0]} <span aria-hidden="true">👋</span>
+            {timeOfDayGreeting()}, {technician.name.split(' ')[0]} <span aria-hidden="true">👋</span>
           </h1>
           <p className="tech-header__subtext">Here&rsquo;s your work overview for today.</p>
         </div>

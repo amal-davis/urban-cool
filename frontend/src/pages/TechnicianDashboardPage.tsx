@@ -7,6 +7,8 @@ import { JobDetailModal } from '../components/TechnicianDashboard/JobDetailModal
 import { JobWorkflowSection } from '../components/TechnicianDashboard/JobWorkflowSection'
 import { QuickActionsSection } from '../components/TechnicianDashboard/QuickActionsSection'
 import { CommissionProgress } from '../components/TechnicianDashboard/CommissionProgress'
+import { MobileTechnicianHome } from '../components/TechnicianDashboard/MobileHome/MobileTechnicianHome'
+import { MOBILE_HOME_SECTIONS } from '../components/TechnicianDashboard/MobileHome/mobileSections'
 import { Toast } from '../components/Toast/Toast'
 import { BriefcaseIcon, ChartBarIcon, CheckCircleIcon, ClockIcon, WalletIcon } from '../components/icons/Icons'
 import { statusGroup } from '../lib/bookingApi'
@@ -19,9 +21,16 @@ import type { TechnicianEarnings } from '../lib/technicianEarningsApi'
 import { formatAmount } from '../data/technicianDashboardData'
 import { useTechnicianAuth } from '../lib/TechnicianAuthContext'
 import { usePageMeta } from '../lib/usePageMeta'
+import { useMediaQuery } from '../lib/useMediaQuery'
 import './TechnicianDashboardPage.css'
 
 type LoadState = 'loading' | 'error' | 'ready'
+
+/** Below this width the page renders MobileTechnicianHome instead of the
+ *  desktop sections — the same 1024px the sidebar itself switches from
+ *  drawer to permanent column at (TechnicianSidebar.css), so the shell and
+ *  its contents never disagree about which layout is on screen. */
+const MOBILE_QUERY = '(max-width: 1023.98px)'
 
 /**
  * Technician Dashboard overview — /technician/dashboard. Reachable only via
@@ -33,9 +42,21 @@ type LoadState = 'loading' | 'error' | 'ready'
  * fetched from GET /api/technician/jobs/, GET /api/technician/performance/,
  * and GET /api/technician/earnings/ (lib/technicianJobsApi.ts, lib/
  * technicianPerformanceApi.ts, lib/technicianEarningsApi.ts).
+ *
+ * Two layouts, one set of data. Below 1024px this renders
+ * MobileTechnicianHome — a different composition of the same three fetches
+ * (greeting banner, day strip, earnings, stats ring, quick actions), per
+ * the supplied mobile design; at 1024px and up it renders the desktop
+ * sections below, unchanged.
+ *
+ * Only one of the two is ever mounted, rather than rendering both and
+ * hiding one with CSS: the hidden layout would keep its buttons and links
+ * in the tab order and in the accessibility tree, so a keyboard or screen
+ * reader user would traverse the whole dashboard twice.
  */
 export function TechnicianDashboardPage() {
   const { technician } = useTechnicianAuth()
+  const isMobile = useMediaQuery(MOBILE_QUERY)
   const [jobs, setJobs] = useState<TechnicianJob[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [performance, setPerformance] = useState<TechnicianPerformance | null>(null)
@@ -114,6 +135,27 @@ export function TechnicianDashboardPage() {
   const inProgressCount = jobs.filter((job) => statusGroup(job.status) === 'in-progress').length
   const completedCount = jobs.filter((job) => job.status === 'completed').length
 
+  if (isMobile) {
+    return (
+      <TechnicianLayout hideHeaderGreetingOnMobile sidebarSectionTargets={MOBILE_HOME_SECTIONS}>
+        <MobileTechnicianHome
+          technicianName={technician.name}
+          jobs={jobs}
+          jobsLoadState={loadState}
+          earnings={earnings}
+          earningsLoadState={earningsLoadState}
+          onOpenJob={setSelectedJob}
+          onQuickAction={handleComingSoon}
+        />
+
+        <JobDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} onStatusUpdated={handleStatusUpdated} />
+        <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+      </TechnicianLayout>
+    )
+  }
+
+  // No `hideHeaderGreetingOnMobile` here: this branch only ever renders at
+  // 1024px and up, where that prop does nothing anyway.
   return (
     <TechnicianLayout>
       <section className="tech-section">

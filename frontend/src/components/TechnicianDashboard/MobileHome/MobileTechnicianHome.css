@@ -1,0 +1,973 @@
+/* Technician mobile home (<1024px) — one stylesheet for the whole surface
+   rather than one per sub-component, the same way ServiceDetailPage.css
+   covers its own page's several components: these sections are one screen
+   sharing one visual system, and splitting them across eight files would
+   scatter the tone scale below across eight places.
+
+   The desktop dashboard is untouched by everything here — it never mounts
+   these components (see TechnicianDashboardPage.tsx). */
+
+.mtech {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  /* Single column, but capped: at the top of this range (a ~1000px tablet)
+     a phone layout stretched edge to edge reads as broken, not roomy. */
+  max-width: 520px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.mtech__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* The sidebar's in-page links (see mobileSections.ts) scroll to these, and
+   TechnicianHeader is `position: sticky` — without a scroll margin the
+   section heading lands underneath the bar and reads as having scrolled to
+   the wrong place. Covers the bar's own height plus a little air. */
+.mtech__section,
+.mtech__anchor {
+  scroll-margin-top: 88px;
+}
+
+/* Zero-height marker for "scroll back to the top of the page". */
+.mtech__anchor {
+  height: 0;
+}
+
+@media (max-width: 640px) {
+  .mtech__section,
+  .mtech__anchor {
+    /* The header sheds its vertical padding at this width. */
+    scroll-margin-top: 72px;
+  }
+}
+
+.mtech__job-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ---- Tone scale -------------------------------------------------------
+   Five roles, each derived from a token already in the system rather than
+   a new hex: Signal Blue, Confirmed Green, Pending Amber, a violet mixed
+   from the brand's own two committed colours, and Dispatch Red (which
+   appears only as the "cancelled" swatch in the stats ring — never as a
+   fill competing with a Book/primary action, per DESIGN.md's Two-Signal
+   Rule).
+
+   Each tone exposes a tint (backgrounds) and an ink (icons, labels) so the
+   pairing is defined once and reused by pills, thumbnails, quick actions,
+   earnings tiles, and ring segments alike. */
+.mtech {
+  --tone-0-ink: var(--color-primary-deep);
+  --tone-0-tint: color-mix(in oklch, var(--color-primary) 14%, white);
+  --tone-1-ink: var(--color-success);
+  --tone-1-tint: color-mix(in oklch, var(--color-success) 14%, white);
+  --tone-2-ink: color-mix(in oklch, var(--color-warning) 55%, var(--color-ink));
+  --tone-2-tint: color-mix(in oklch, var(--color-warning) 26%, white);
+  --tone-3-ink: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent) 50%);
+  --tone-3-tint: color-mix(in oklch, var(--tone-3-ink) 15%, white);
+  --tone-4-ink: var(--color-accent);
+  --tone-4-tint: color-mix(in oklch, var(--color-accent) 12%, white);
+}
+
+/* ---- Greeting banner ---- */
+
+.mtech-greeting {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary-deep) 0%, #062f5c 100%);
+  color: #fff;
+}
+
+.mtech-greeting__art {
+  position: absolute;
+  right: -18px;
+  bottom: -34px;
+  width: 168px;
+  height: 168px;
+  color: #fff;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.mtech-greeting__eyebrow {
+  margin: 0;
+  font-size: var(--text-body-size);
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.mtech-greeting__name {
+  margin: 2px 0 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.mtech-greeting__tagline {
+  position: relative;
+  margin: var(--space-sm) 0 0;
+  max-width: 22ch;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  opacity: 0.88;
+}
+
+/* ---- Stat pills ---- */
+
+.mtech-pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.mtech-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-sm) 4px;
+  border-radius: var(--radius-md);
+  text-align: center;
+  min-width: 0;
+}
+
+.mtech-pill__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-full);
+  background: #fff;
+}
+.mtech-pill__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mtech-pill__value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+/* 11px, not 10: PRODUCT.md notes the audience skews toward general and
+   older users, and 10px labels under a big numeral are the first thing that
+   becomes unreadable on a phone held at arm's length. */
+.mtech-pill__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-muted);
+}
+
+.mtech-pill--tone-0 { background: var(--tone-0-tint); }
+.mtech-pill--tone-0 .mtech-pill__icon { color: var(--tone-0-ink); }
+.mtech-pill--tone-1 { background: var(--tone-1-tint); }
+.mtech-pill--tone-1 .mtech-pill__icon { color: var(--tone-1-ink); }
+.mtech-pill--tone-2 { background: var(--tone-2-tint); }
+.mtech-pill--tone-2 .mtech-pill__icon { color: var(--tone-2-ink); }
+.mtech-pill--tone-3 { background: var(--tone-3-tint); }
+.mtech-pill--tone-3 .mtech-pill__icon { color: var(--tone-3-ink); }
+
+/* ---- Job cards ---- */
+
+.mtech-job {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+}
+
+.mtech-job--compact {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.mtech-job--compact:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+.mtech-job--compact:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+}
+
+.mtech-job__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.mtech-job__head-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mtech-job__head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.mtech-job__thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-md);
+}
+.mtech-job__thumb svg {
+  width: 38px;
+  height: 38px;
+}
+
+.mtech-job__service {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.mtech-job__time {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-job__line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 1px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-ink);
+  /* Long addresses/names truncate rather than wrapping a card to four
+     lines — the full value is a tap away in the job detail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mtech-job__line svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-muted);
+}
+.mtech-job__line--muted {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.mtech-job__compact-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.mtech-job__compact-body .mtech-job__line {
+  max-width: 100%;
+}
+
+.mtech-job__chevron {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--color-muted);
+}
+
+.mtech-job__action {
+  width: 100%;
+}
+
+.mtech-job__thumb--tone-0 { background: var(--tone-0-tint); color: var(--tone-0-ink); }
+.mtech-job__thumb--tone-1 { background: var(--tone-1-tint); color: var(--tone-1-ink); }
+.mtech-job__thumb--tone-2 { background: var(--tone-2-tint); color: var(--tone-2-ink); }
+.mtech-job__thumb--tone-3 { background: var(--tone-3-tint); color: var(--tone-3-ink); }
+
+.mtech-job__service--tone-0 { background: var(--tone-0-tint); color: var(--tone-0-ink); }
+.mtech-job__service--tone-1 { background: var(--tone-1-tint); color: var(--tone-1-ink); }
+.mtech-job__service--tone-2 { background: var(--tone-2-tint); color: var(--tone-2-ink); }
+.mtech-job__service--tone-3 { background: var(--tone-3-tint); color: var(--tone-3-ink); }
+
+/* ---- Week schedule ---- */
+
+.mtech-week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.mtech-week__strip {
+  display: flex;
+  gap: 6px;
+  /* Seven fixed-width days won't fit a 320px phone; scroll horizontally
+     rather than shrinking them into unreadable slivers. */
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  margin-inline: calc(-1 * var(--space-sm));
+  padding-inline: var(--space-sm);
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.mtech-week__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.mtech-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  min-width: 52px;
+  padding: var(--space-sm) 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-family: inherit;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.mtech-day:hover {
+  border-color: var(--color-primary);
+}
+.mtech-day:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+}
+
+.mtech-day__weekday {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-day__date {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.mtech-day__count {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-day--selected {
+  background: var(--color-primary-deep);
+  border-color: var(--color-primary-deep);
+}
+.mtech-day--selected .mtech-day__weekday,
+.mtech-day--selected .mtech-day__date,
+.mtech-day--selected .mtech-day__count {
+  color: #fff;
+}
+
+.mtech-week__selected {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
+}
+
+.mtech-week__selected-date {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.mtech-week__selected-count {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary-deep);
+}
+
+.mtech-week__empty {
+  margin: 0;
+  padding: var(--space-md) 0;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.mtech-week__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mtech-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) 0;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mtech-week__list li:last-child .mtech-slot {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.mtech-slot:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+}
+
+.mtech-slot__time {
+  flex-shrink: 0;
+  width: 72px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-slot__dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+}
+.mtech-slot__dot--tone-0 { background: var(--tone-0-ink); }
+.mtech-slot__dot--tone-1 { background: var(--tone-1-ink); }
+.mtech-slot__dot--tone-2 { background: var(--tone-2-ink); }
+.mtech-slot__dot--tone-3 { background: var(--tone-3-ink); }
+
+.mtech-slot__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mtech-slot__service {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mtech-slot__customer {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mtech-slot__chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-muted);
+}
+
+/* ---- Earnings ---- */
+
+.mtech-earnings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mtech-earnings__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: var(--space-sm);
+  align-items: stretch;
+}
+
+.mtech-earnings__headline {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.mtech-earnings__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--tone-0-tint);
+  color: var(--tone-0-ink);
+}
+.mtech-earnings__icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.mtech-earnings__amount {
+  font-size: 1.3125rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+.mtech-earnings__amount--secondary {
+  font-size: 1.0625rem;
+}
+
+.mtech-earnings__caption {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-earnings__divider {
+  height: 1px;
+  margin: var(--space-sm) 0;
+  background: var(--color-border);
+}
+
+.mtech-earnings__chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-md) var(--space-sm) var(--space-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.mtech-earnings__bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 5px;
+  flex: 1;
+  min-height: 92px;
+}
+
+.mtech-earnings__bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 4px 4px 2px 2px;
+  background: color-mix(in oklch, var(--color-primary) 28%, white);
+}
+.mtech-earnings__bar--current {
+  background: var(--color-primary-deep);
+}
+
+.mtech-earnings__months {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.mtech-earnings__months span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.mtech-earnings__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.mtech-earnings__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+}
+
+.mtech-earnings__tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--space-xs);
+  border-radius: var(--radius-full);
+  background: #fff;
+}
+.mtech-earnings__tile-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mtech-earnings__tile-value {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.mtech-earnings__tile-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-earnings__tile--tone-2 { background: var(--tone-2-tint); }
+.mtech-earnings__tile--tone-2 .mtech-earnings__tile-icon { color: var(--tone-2-ink); }
+.mtech-earnings__tile--tone-3 { background: var(--tone-3-tint); }
+.mtech-earnings__tile--tone-3 .mtech-earnings__tile-icon { color: var(--tone-3-ink); }
+
+/* ---- Job statistics ring ---- */
+
+.mtech-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.mtech-stats__ring {
+  position: relative;
+  flex-shrink: 0;
+  width: 124px;
+  height: 124px;
+}
+.mtech-stats__ring svg {
+  width: 100%;
+  height: 100%;
+  /* Start the first arc at 12 o'clock instead of 3. */
+  transform: rotate(-90deg);
+}
+
+.mtech-stats__track {
+  fill: none;
+  stroke: var(--color-surface);
+  stroke-width: 14;
+}
+
+.mtech-stats__arc {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: butt;
+}
+.mtech-stats__arc--tone-0 { stroke: var(--tone-0-ink); }
+.mtech-stats__arc--tone-1 { stroke: var(--tone-1-ink); }
+.mtech-stats__arc--tone-2 { stroke: var(--color-warning); }
+.mtech-stats__arc--tone-4 { stroke: var(--tone-4-ink); }
+
+.mtech-stats__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  pointer-events: none;
+}
+
+.mtech-stats__total {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+.mtech-stats__total-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-stats__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.mtech-stats__legend-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.8125rem;
+}
+
+.mtech-stats__swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+}
+.mtech-stats__swatch--tone-0 { background: var(--tone-0-ink); }
+.mtech-stats__swatch--tone-1 { background: var(--tone-1-ink); }
+.mtech-stats__swatch--tone-2 { background: var(--color-warning); }
+.mtech-stats__swatch--tone-4 { background: var(--tone-4-ink); }
+
+.mtech-stats__legend-label {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-muted);
+}
+
+.mtech-stats__legend-count {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* ---- Quick actions ---- */
+
+.mtech-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.mtech-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  /* Comfortably past the 44px touch-target floor even at 320px wide. */
+  min-height: 88px;
+  padding: var(--space-sm) 4px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease;
+}
+.mtech-action:active {
+  transform: scale(0.97);
+}
+.mtech-action:focus-visible {
+  outline: 2px solid var(--color-primary-deep);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mtech-action {
+    transition: none;
+  }
+  .mtech-action:active {
+    transform: none;
+  }
+}
+
+.mtech-action__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: #fff;
+}
+.mtech-action__icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.mtech-action__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+  text-align: center;
+}
+
+.mtech-action--tone-0 { background: var(--tone-0-tint); }
+.mtech-action--tone-0 .mtech-action__icon { color: var(--tone-0-ink); }
+.mtech-action--tone-1 { background: var(--tone-1-tint); }
+.mtech-action--tone-1 .mtech-action__icon { color: var(--tone-1-ink); }
+.mtech-action--tone-2 { background: var(--tone-2-tint); }
+.mtech-action--tone-2 .mtech-action__icon { color: var(--tone-2-ink); }
+.mtech-action--tone-3 { background: var(--tone-3-tint); }
+.mtech-action--tone-3 .mtech-action__icon { color: var(--tone-3-ink); }
+
+/* ---- Editorial banners ---- */
+
+.mtech-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  background: var(--tone-0-tint);
+}
+
+.mtech-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-warning);
+  color: var(--color-ink);
+}
+.mtech-banner__badge svg {
+  width: 21px;
+  height: 21px;
+}
+
+.mtech-banner__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.mtech-banner__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.mtech-banner__text {
+  margin: 1px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+/* Sits under the copy rather than beside it: at 390px a right-hand tag
+   leaves ~150px for the title, which wraps "Keep Up the Good Work!" into a
+   ragged two lines wrapping around the tag. Below it, both read cleanly at
+   every width. */
+.mtech-banner__tag {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-primary-deep);
+}
+
+.mtech-banner--quote {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.mtech-banner__quote-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mtech-banner__quote-text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--color-ink);
+  max-width: 30ch;
+}
+
+.mtech-banner__quote-source {
+  margin: var(--space-xs) 0 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.mtech-banner__quote-art {
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  color: var(--color-primary);
+  opacity: 0.42;
+}
+
+/* ---- Narrow phones ---- */
+
+@media (max-width: 360px) {
+  .mtech-pills,
+  .mtech-actions {
+    /* Four across stops being legible around here — two rows of two keeps
+       the labels readable instead of hyphenating them to death. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mtech-earnings__top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mtech-stats {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .mtech-stats__ring {
+    align-self: center;
+  }
+  /* Badge and time stop fitting side by side around here, and a pill badge
+     wrapping onto two lines reads as a mistake — give the badge the full
+     width and drop the time beneath it instead. */
+  .mtech-job__head-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+}

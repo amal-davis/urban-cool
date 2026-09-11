@@ -159,3 +159,14 @@
     display: none;
   }
 }
+
+/* Dashboard-only opt-in (see TechnicianHeaderProps' hideGreetingOnMobile
+   doc comment) — the greeting moves into MobileTechnicianHome's own banner
+   below this same 1024px breakpoint, so it's dropped from the bar itself
+   rather than shown twice. Every other /technician/* page never sets this
+   prop, so its header is untouched at any width. */
+@media (max-width: 1023.98px) {
+  .tech-header--hide-greeting-mobile .tech-header__greeting {
+    display: none;
+  }
+}

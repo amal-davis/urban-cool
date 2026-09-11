@@ -22,6 +22,17 @@ interface TechnicianSidebarProps {
    *  dashboard. */
   open: boolean
   onClose: () => void
+  /** Optional map of nav-item id → element id on the current page. Where a
+   *  nav item has an entry, tapping it scrolls to that section and closes
+   *  the drawer instead of navigating away.
+   *
+   *  Only the mobile technician home passes this (see MobileHome/
+   *  mobileSections.ts): that one screen already holds the content the
+   *  linked pages show, so navigating would drop a phone user onto the
+   *  desktop-shaped version of something they're already looking at. Any
+   *  page that doesn't pass it — and any nav item missing from the map —
+   *  keeps navigating exactly as before. */
+  sectionTargets?: Record<string, string>
 }
 
 const navItems = [
@@ -52,7 +63,7 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
  * off-canvas on mobile when closed (removing it from focus/AT the same way
  * `inert` would), forced back to `visible` unconditionally at ≥1024px.
  */
-export function TechnicianSidebar({ open, onClose }: TechnicianSidebarProps) {
+export function TechnicianSidebar({ open, onClose, sectionTargets }: TechnicianSidebarProps) {
   const { technician, logout } = useTechnicianAuth()
   const navigate = useNavigate()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -86,6 +97,27 @@ export function TechnicianSidebar({ open, onClose }: TechnicianSidebarProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
 
+  /** Close the drawer, then scroll — in that order, and deferred past the
+   *  current task. While the drawer is open the effect above holds `body {
+   *  overflow: hidden }`; React flushes this click's state update and runs
+   *  that cleanup only once the handler returns, so scrolling any earlier
+   *  is simply discarded by the still-locked body.
+   *
+   *  setTimeout rather than requestAnimationFrame: rAF is tied to the
+   *  rendering pipeline and never fires at all in a throttled or
+   *  non-painting context, which would leave the drawer closing and nothing
+   *  scrolling. A zero timer still fires in those cases and lands at the
+   *  same point — after React's synchronous flush for a discrete event. */
+  function scrollToSection(sectionId: string) {
+    onClose()
+    window.setTimeout(() => {
+      const target = document.getElementById(sectionId)
+      if (!target) return
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' })
+    }, 0)
+  }
+
   async function handleLogout() {
     onClose()
     try {
@@ -118,14 +150,34 @@ export function TechnicianSidebar({ open, onClose }: TechnicianSidebarProps) {
 
         <nav className="tech-sidebar__nav" aria-label="Technician">
           <ul>
-            {navItems.map(({ id, label, to, Icon, end }) => (
-              <li key={id}>
-                <NavLink to={to} end={end} className={navLinkClass} onClick={onClose}>
-                  <Icon className="tech-sidebar__icon" aria-hidden="true" />
-                  <span>{label}</span>
-                </NavLink>
-              </li>
-            ))}
+            {navItems.map(({ id, label, to, Icon, end }) => {
+              const sectionId = sectionTargets?.[id]
+              return (
+                <li key={id}>
+                  {/* Still a NavLink even when it scrolls: the real route
+                      stays in `href`, so active-state highlighting, middle-
+                      click, "open in new tab" and a no-JS fallback all keep
+                      working — an ordinary left-click just handles it in
+                      place instead. */}
+                  <NavLink
+                    to={to}
+                    end={end}
+                    className={navLinkClass}
+                    onClick={(event) => {
+                      if (!sectionId) {
+                        onClose()
+                        return
+                      }
+                      event.preventDefault()
+                      scrollToSection(sectionId)
+                    }}
+                  >
+                    <Icon className="tech-sidebar__icon" aria-hidden="true" />
+                    <span>{label}</span>
+                  </NavLink>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
