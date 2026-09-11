@@ -1,31 +1,31 @@
 import type { Service } from '../../data/services'
+import './ServiceImage.css'
 
 interface ServiceImageProps {
   service: Service
 }
 
 /**
- * The service's visual — dynamic per service via `service.imageUrl`/`Icon`,
- * never hardcoded to one appliance. Prefers a real photo (`imageUrl`) when
- * the data provides one; today none do (static frontend-only data, see
- * services.ts), so every service renders its existing illustration inside
- * the same tinted panel the Services page already uses for this — no new
- * visual language introduced for one page. Swapping in real photography
- * later (e.g. once a backend serves `imageUrl`) needs no change here: the
- * `<img>` branch is already object-fit: contain, rounded, and responsive.
+ * Plain photo/illustration panel — no overlaid copy. Used by BookingSummary
+ * (Booking/BookingSummary.tsx), which renders its own heading/description
+ * underneath, unlike the /service/:id page itself: that page's hero
+ * (ServiceHero.tsx) overlays the name/tagline directly on the image and
+ * carries the page's one `<h1>`, which would double up awkwardly next to
+ * BookingSummary's own `<h2>` if reused here — hence this smaller sibling
+ * component instead of one component serving both call sites.
  */
 export function ServiceImage({ service }: ServiceImageProps) {
   const { imageUrl, Icon, ariaLabel } = service
 
   return (
-    <div className="service-detail__image-panel">
+    <div className="service-media">
       {imageUrl ? (
-        <img src={imageUrl} alt={`${ariaLabel} image`} className="service-detail__image-photo" />
+        <img src={imageUrl} alt={`${ariaLabel} image`} className="service-media__photo" />
       ) : (
         // Icon-less fallback only reachable if a hardcoded service (data/
         // services.ts) somehow omitted both — every backend-driven service
         // (see lib/servicesApi.ts) always sets imageUrl instead.
-        Icon && <Icon className="service-detail__image-icon" aria-hidden="true" />
+        Icon && <Icon className="service-media__icon" aria-hidden="true" />
       )}
     </div>
   )

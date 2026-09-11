@@ -1,11 +1,11 @@
 /* Service Detail page (/service/:serviceId) — one reusable layout driven by
    whichever service's data matches the route param. Mobile is a single
-   stacked column (image → name → description → included → price → CTA,
-   per the supplied mobile reference); desktop becomes a genuine two-column
-   layout at 900px, the same breakpoint the Services page's own detail
-   cards already stack at (ServiceDetail.css), not a single column just
-   stretched wider. No fixed viewport height/overflow anywhere here — the
-   page scrolls like any other. */
+   stacked column (hero photo → included-service chips → details → price →
+   CTA, per the supplied mobile reference); desktop becomes a genuine
+   two-column layout at 900px (media left, details right), the same
+   breakpoint the Services page's own detail cards already stack at
+   (ServiceDetail.css), not a single column just stretched wider. No fixed
+   viewport height/overflow anywhere here — the page scrolls like any other. */
 
 .service-detail {
   background: var(--color-bg);
@@ -69,7 +69,7 @@
   color: var(--color-accent);
 }
 
-/* ---- Two-column grid ---- */
+/* ---- Two-column grid: media (hero + chips) / content ---- */
 
 .service-detail__grid {
   display: grid;
@@ -78,36 +78,199 @@
   align-items: start;
 }
 
-.service-detail__image-panel {
+.service-detail__media {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1;
-  padding: var(--space-xl);
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  /* Large desktop screens: keep the panel from growing arbitrarily wide
+  flex-direction: column;
+  gap: var(--space-md);
+  /* Large desktop screens: keep the column from growing arbitrarily wide
      alongside a --container-max of 1280px — matches "don't stretch the
      mobile layout across the screen" from the brief. */
   max-width: 560px;
 }
 
-.service-detail__image-icon {
+/* ---- Hero: photo card with name/tagline overlaid on a gradient scrim ---- */
+
+.service-detail__hero {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+/* No fixed aspect-ratio/height — the photo sits in normal flow at its own
+   natural proportions (full container width, height auto), so the hero's
+   height is whatever that photo's real aspect ratio produces rather than a
+   box the photo gets cropped to fit. The scrim/copy below are absolutely
+   positioned against `.service-detail__hero` (position: relative), which
+   works the same either way since that height is still resolved — it just
+   comes from the image now instead of a fixed ratio. */
+.service-detail__hero-photo {
+  display: block;
   width: 100%;
-  max-width: 320px;
   height: auto;
+}
+
+.service-detail__hero-icon {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  height: 45%;
+  margin: auto;
   color: var(--color-primary);
 }
 
-/* Real photo path (once service.imageUrl is populated) — contain, not
-   cover, so the appliance is never cropped, and rounded to match the
-   illustration panel it replaces. */
-.service-detail__image-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: var(--radius-md);
+/* Bottom-heavy scrim so the overlaid copy stays readable without flattening
+   the whole photo — rgba values are --color-ink's own rgb(9,14,19), not an
+   arbitrary black, so the darkened photo still reads as "this brand's ink",
+   not a generic tint. */
+.service-detail__hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(9, 14, 19, 0.85) 0%,
+    rgba(9, 14, 19, 0.5) 42%,
+    rgba(9, 14, 19, 0) 75%
+  );
 }
+
+.service-detail__hero-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-lg);
+  color: #fff;
+}
+
+.service-detail__hero-eyebrow {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  margin-bottom: var(--space-xs);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.service-detail__hero-name {
+  font-size: var(--text-headline-size);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.service-detail__hero-subtitle {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 34ch;
+  margin: 0;
+}
+
+/* Icon-less/photo-less fallback (see ServiceHero.tsx's doc comment — not
+   reachable from real data today). No photo to scrim, so the copy switches
+   to dark-on-light instead of white-on-scrim. Also the one case that still
+   needs an explicit aspect-ratio: with no image in flow to derive a height
+   from, the box would otherwise collapse to nothing. */
+.service-detail__hero--icon {
+  aspect-ratio: 4 / 3;
+  background: var(--color-surface);
+}
+.service-detail__hero--icon .service-detail__hero-copy {
+  color: var(--color-ink);
+  background: linear-gradient(to top, var(--color-surface) 55%, transparent 100%);
+}
+.service-detail__hero--icon .service-detail__hero-eyebrow {
+  background: #fff;
+  color: var(--color-primary-deep);
+}
+.service-detail__hero--icon .service-detail__hero-subtitle {
+  color: var(--color-muted);
+}
+
+/* ---- Services Include: icon + label chip row, under the hero ---- */
+
+.service-detail__included {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-sm);
+}
+
+.service-detail__included-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md) var(--space-xs);
+}
+
+.service-detail__included-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 0 1 76px;
+  text-align: center;
+}
+
+.service-detail__included-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+}
+.service-detail__included-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Four tints, cycled per chip (see IncludedServices.tsx's CHIP_TONES) so
+   the row reads as scannable/distinct at a glance, matching the reference
+   design's multi-color icon row. Each background is a light wash of an
+   already-committed token (a fresh color-mix tint, not a new hardcoded
+   hex), and each icon color is checked for ≥3:1 against its own circle —
+   plenty for a 22px glyph, which counts as large-scale content. Tone 3 is
+   a violet mixed from the brand's own two committed colors (Signal Blue +
+   Dispatch Red) rather than an unrelated hue introduced from nowhere. */
+.service-detail__included-icon--0 {
+  background: color-mix(in oklch, var(--color-primary) 16%, white);
+  color: var(--color-primary-deep);
+}
+.service-detail__included-icon--1 {
+  background: color-mix(in oklch, var(--color-success) 16%, white);
+  color: var(--color-success);
+}
+.service-detail__included-icon--2 {
+  background: color-mix(in oklch, var(--color-warning) 26%, white);
+  color: color-mix(in oklch, var(--color-warning) 55%, var(--color-ink));
+}
+.service-detail__included-icon--3 {
+  --tone-violet: color-mix(in oklch, var(--color-primary) 50%, var(--color-accent) 50%);
+  background: color-mix(in oklch, var(--tone-violet) 16%, white);
+  color: var(--tone-violet);
+}
+
+.service-detail__included-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+/* ---- Content column ---- */
 
 .service-detail__content {
   display: flex;
@@ -125,14 +288,6 @@
   margin: 0;
 }
 
-.service-detail__name {
-  font-size: var(--text-headline-size);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--color-ink);
-  margin: 0;
-}
-
 .service-detail__description {
   font-size: var(--text-body-size);
   line-height: 1.55;
@@ -141,44 +296,52 @@
   margin: 0;
 }
 
-/* ---- Services Include ---- */
+/* ---- Trained & Verified Technicians trust row ---- */
 
-.service-detail__included {
+.service-detail__technician {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
   width: 100%;
   margin-top: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
 }
 
-.service-detail__section-heading {
-  font-size: var(--text-label-size);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--color-muted);
-  margin: var(--space-sm) 0 0;
+.service-detail__technician-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-deep);
+  color: #fff;
+}
+.service-detail__technician-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
-.service-detail__included-list {
-  list-style: none;
-  margin: var(--space-sm) 0 0;
-  padding: 0;
+.service-detail__technician-text {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  width: 100%;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.25;
 }
-.service-detail__included-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-xs);
-  font-size: var(--text-body-size);
+
+.service-detail__technician-title {
+  font-size: 0.875rem;
+  font-weight: 700;
   color: var(--color-ink);
 }
-.service-detail__included-list svg {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  color: var(--color-success);
+
+.service-detail__technician-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-muted);
 }
 
 /* ---- Estimated price ---- */
@@ -232,6 +395,13 @@
   min-width: 220px;
 }
 
+/* Only has room to do anything on the full-width mobile button (see below)
+   — pushes the trailing chevron to the far edge instead of hugging the
+   label, matching the reference design's icon-left/label/arrow-right CTA. */
+.service-detail__cta-arrow {
+  margin-left: auto;
+}
+
 /* ---- Service Not Found ---- */
 
 .service-not-found {
@@ -277,17 +447,15 @@
 
 /* ---- Responsive ---- */
 
-/* Tablet and below: stack image above content, same threshold the Services
+/* Tablet and below: stack media above content, same threshold the Services
    page's own detail cards use. */
 @media (max-width: 900px) {
   .service-detail__grid {
     grid-template-columns: 1fr;
     gap: var(--space-lg);
   }
-  .service-detail__image-panel {
+  .service-detail__media {
     max-width: none;
-    aspect-ratio: 4 / 3;
-    padding: var(--space-lg);
   }
 }
 
@@ -303,14 +471,13 @@
 }
 
 @media (max-width: 600px) {
-  .service-detail__image-panel {
-    aspect-ratio: 1;
-    padding: var(--space-lg);
-  }
-  .service-detail__image-icon {
-    max-width: 220px;
+  .service-detail__hero-copy {
+    padding: var(--space-md);
   }
   .service-detail__grid {
     gap: var(--space-md);
+  }
+  .service-detail__included-item {
+    flex-basis: 68px;
   }
 }

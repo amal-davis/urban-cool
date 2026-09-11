@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom'
 import type { Service } from '../data/services'
 import { getServiceDetail, ServicesApiError } from '../lib/servicesApi'
 import { ServiceDetailTopBar } from '../components/ServiceDetailPage/ServiceDetailTopBar'
-import { ServiceImage } from '../components/ServiceDetailPage/ServiceImage'
+import { ServiceHero } from '../components/ServiceDetailPage/ServiceHero'
 import { IncludedServices } from '../components/ServiceDetailPage/IncludedServices'
+import { TechnicianTrust } from '../components/ServiceDetailPage/TechnicianTrust'
 import { EstimatedPrice } from '../components/ServiceDetailPage/EstimatedPrice'
 import { BookingCTA } from '../components/ServiceDetailPage/BookingCTA'
 import { ServiceNotFound } from '../components/ServiceDetailPage/ServiceNotFound'
@@ -101,19 +102,16 @@ export function ServiceDetailPage() {
         <ServiceDetailTopBar />
 
         <div className="service-detail__grid">
-          <ServiceImage service={service} />
+          <div className="service-detail__media">
+            <ServiceHero service={service} />
+            <IncludedServices items={service.includedServices} />
+          </div>
 
           <div className="service-detail__content">
             <p className="service-detail__eyebrow">Service Details</p>
-            <h1 id="service-detail-heading" className="service-detail__name">
-              {service.name}
-            </h1>
-            <p className="service-detail__description">{service.shortDescription}</p>
-            {service.detailIntro && service.detailIntro !== service.shortDescription && (
-              <p className="service-detail__description">{service.detailIntro}</p>
-            )}
+            <p className="service-detail__description">{service.detailIntro}</p>
 
-            <IncludedServices items={service.includedServices} />
+            <TechnicianTrust />
             <EstimatedPrice
               startingPrice={service.startingPrice}
               endingPrice={service.estimatedPriceTo}
